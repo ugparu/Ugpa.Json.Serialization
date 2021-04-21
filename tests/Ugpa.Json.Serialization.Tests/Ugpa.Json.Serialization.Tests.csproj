@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Ugpa.Json.Serialization\Ugpa.Json.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>
