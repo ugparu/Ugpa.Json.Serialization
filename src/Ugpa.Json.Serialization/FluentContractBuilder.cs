@@ -5,6 +5,7 @@ using Ugpa.Json.Serialization.Properties;
 namespace Ugpa.Json.Serialization
 {
     public sealed class FluentContractBuilder<T>
+        where T : class
     {
         private readonly FluentContractResolver resolver;
         private readonly FluentSerializationBinder binder;
@@ -13,6 +14,18 @@ namespace Ugpa.Json.Serialization
         {
             this.resolver = resolver;
             this.binder = binder;
+        }
+
+        public FluentContractBuilder<T> ConstructWith(Func<T> factory)
+        {
+            resolver.SetFactory(factory);
+            return this;
+        }
+
+        public FluentContractBuilder<T> ConstructWith(Func<object[], T> factory)
+        {
+            resolver.SetFactory(factory);
+            return this;
         }
 
         public FluentContractBuilder<T> HasProperty<TProp>(Expression<Func<T, TProp>> property, string name, bool isRequired = true)

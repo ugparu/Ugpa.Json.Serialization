@@ -10,8 +10,9 @@ namespace Ugpa.Json.Serialization
 {
     internal sealed class FluentContractResolver : DefaultContractResolver
     {
-        private readonly Dictionary<Type, Dictionary<MemberInfo, (string name, bool isRequired)>> properties =
-            new Dictionary<Type, Dictionary<MemberInfo, (string name, bool isRequired)>>();
+        private readonly Dictionary<Type, Dictionary<MemberInfo, (string name, bool isRequired)>> properties = new();
+        private readonly Dictionary<Type, Func<object>> defaultCreators = new();
+        private readonly Dictionary<Type, ObjectConstructor<object>> overrideCreators = new();
 
         public bool AllowNullValues { get; set; } = true;
 
@@ -52,6 +53,41 @@ namespace Ugpa.Json.Serialization
             }
 
             typeInfo.Add(member, (name, isRequired));
+        }
+
+        public void SetFactory<T>(Func<T> factory)
+            where T : class
+        {
+            if (factory is null)
+                throw new ArgumentNullException(nameof(factory));
+
+            defaultCreators[typeof(T)] = factory;
+        }
+
+        public void SetFactory<T>(Func<object[], T> factory)
+            where T : class
+        {
+            if (factory is null)
+                throw new ArgumentNullException(nameof(factory));
+
+            overrideCreators[typeof(T)] = new ObjectConstructor<object>(factory);
+        }
+
+        protected override JsonContract CreateContract(Type objectType)
+        {
+            var contract = base.CreateContract(objectType);
+
+            if (defaultCreators.TryGetValue(objectType, out var defaultCreator))
+            {
+                contract.DefaultCreator = defaultCreator;
+            }
+
+            if (contract is JsonObjectContract objContract && overrideCreators.TryGetValue(objectType, out var overrideCreator))
+            {
+                objContract.OverrideCreator = overrideCreator;
+            }
+
+            return contract;
         }
 
         protected override List<MemberInfo> GetSerializableMembers(Type objectType)

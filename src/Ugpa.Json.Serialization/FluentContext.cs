@@ -21,6 +21,7 @@ namespace Ugpa.Json.Serialization
         }
 
         public FluentContext Configure<T>(Action<FluentContractBuilder<T>> builder)
+            where T : class
         {
             if (configuredTypes.Contains(typeof(T)))
                 throw new InvalidOperationException();
