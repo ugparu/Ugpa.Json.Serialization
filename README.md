@@ -1,16 +1,18 @@
 # Ugpa.Json.Serialization
 This repository contains a simple implementation of fluent configurator for [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) serializer.
-# Important notes
-- Configurator compatible only with reference types.
-- Configurator implements `IContractResolver` and `ISerializationBinder` interfaces, so it's incompatible with any other resolvers and binders.
-# Configuring
-## Creating configurator
+
+![](https://github.com/ugparu/Ugpa.Json.Serialization/actions/workflows/build.yml/badge.svg?branch=develop)
+## Important notes
+- Configurator is compatible only with reference types.
+- Configurator is based on `IContractResolver` and `ISerializationBinder` interfaces implementation, so it's incompatible with any other resolvers and binders.
+## Configuring
+### Creating configurator
 ```csharp
 var context1 = new FluentContext(); // null values are allowed.
 var context2 = new FluentContext(true); // null values are allowed.
 var context3 = new FluentContext(false); // null values are not allowed.
 ```
-## Configuring properties
+### Configuring properties
 You can map class properties to JSON property names. Also you can define is property required or optional.
 ```csharp
 public sealed class Employee
@@ -25,7 +27,7 @@ context.Configure<Employee>(cfg => cfg
     .HasProperty(_ => _.LastName, "lastName", false) // optional property.
     .HasProperty(_ => _.Age, "age", true)); // required property (explicitly).
 ```
-## Type name binding
+### Type name binding
 You can bind class name to JSON `$type` property.
 ```csharp
 public abstract class Animal { }
@@ -36,7 +38,7 @@ context
     .Configure<Dog>(cfg => cfg.HasContractName("dog"))
     .Configure<Cat>(cfg => cfg.HasContractName("cat"));
 ```
-## Configuring creators
+### Configuring creators
 You can declare custom creator for class.
 For predefined constructor parameters use next:
 ```csharp
@@ -66,7 +68,7 @@ context.Configure<Employee>(cfg => cfg
         (string)_[0], // name.
         (int)_[1]))); // age.
 ```
-## Complete configuration sample
+### Complete configuration sample
 ```csharp
 public sealed class Emplyee
 {
@@ -88,7 +90,7 @@ context.Configure<Emplyee>(cfg => cfg
     .ConstructWith(() => new Emplyee(department))
     .HasContractName("employee"));
 ```
-## Applying configuration
+### Applying configuration
 ```csharp
 var settings = new JsonSerializerSettings
 {
