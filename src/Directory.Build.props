@@ -25,4 +25,4 @@
     <AdditionalFiles Include="$(SolutionDir)stylecop.json" LinkBase="Properties" />
   </ItemGroup>
 
-Project>
+</Project>
