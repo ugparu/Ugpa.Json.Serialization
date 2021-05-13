@@ -14,7 +14,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ugpa.Json.Serialization.Tes
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Miscellaneous", "Miscellaneous", "{178799F5-F70D-4D10-AB8F-AEA34F79228A}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		src\Directory.Build.props = src\Directory.Build.props
+		stylecop.json = stylecop.json
 		src\Ugpa.Json.Serialization.nuspec = src\Ugpa.Json.Serialization.nuspec
 	EndProjectSection
 EndProject

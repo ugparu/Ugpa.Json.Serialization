@@ -5,10 +5,24 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>net472</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <LangVersion>9</LangVersion>
+    <Nullable>enable</Nullable>
     <BaseOutputPath>$(SolutionDir)bin/</BaseOutputPath>
     <BaseIntermediateOutputPath>$(SolutionDir)obj/</BaseIntermediateOutputPath>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-</Project>
+  <ItemGroup>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="8.22.0.31243">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.333">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(SolutionDir)stylecop.json" LinkBase="Properties" />
+  </ItemGroup>
+
+Project>
