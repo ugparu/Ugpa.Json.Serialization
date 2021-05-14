@@ -2,24 +2,19 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>Ugpa.Json.Serialization</id>
-    <version>0.0.1</version>
+    <version>1.0.0</version>
     <authors>pleshakovdv@ugpa.ru</authors>
     <owners>pleshakovdv@ugpa.ru</owners>
-    <projectUrl>https://ppsdevserver.ugpa.ru/PpsProjects/Json.Serialization</projectUrl>
+    <projectUrl>https://github.com/ugparu/Ugpa.Json.Serialization</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Вспомогательные классы для управления JSON сериализацией.</description>
+    <description>Simple fluent configurator for JSON serializer.</description>
     <dependencies>
-      <group targetFramework="net472">
-        <dependency id="Newtonsoft.Json" version="12.0.3" />
+      <group targetFramework="netstandard2.0">
+        <dependency id="Newtonsoft.Json" version="10.0.1" />
       </group>
     </dependencies>
-    <references>
-      <group targetFramework="net472">
-        <reference file="Ugpa.Json.Serialization.dll" />
-      </group>
-    </references>
   </metadata>
   <files>
-    <file src="..\bin\$Configuration$\net472\Ugpa.Json.Serialization.dll" target="lib\net472" />
+    <file src="..\bin\$Configuration$\netstandard2.0\Ugpa.Json.Serialization.dll" target="lib\netstandard2.0" />
   </files>
 </package>

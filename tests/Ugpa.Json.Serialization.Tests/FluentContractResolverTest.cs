@@ -155,6 +155,30 @@ namespace Ugpa.Json.Serialization.Tests
             Assert.True(contract.Properties["y"].Readable);
         }
 
+        [Fact]
+        public void CustomDefaultConstructorSet()
+        {
+            var resolver = new FluentContractResolver();
+            var factory = (Func<TestObjectZ>)(() => new TestObjectZ(1));
+            resolver.SetFactory(factory);
+
+            var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectZ));
+
+            Assert.Same(factory, contract.DefaultCreator);
+        }
+
+        [Fact]
+        public void CustomOverrideConstructorSet()
+        {
+            var resolver = new FluentContractResolver();
+            var factory = (Func<object[], TestObjectZ>)(_ => new TestObjectZ((int)_[0]));
+            resolver.SetFactory(factory);
+
+            var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectZ));
+
+            Assert.Same(factory, contract.OverrideCreator.Target);
+        }
+
         #region Тестовые объекты
 
         private class TestObjectA
@@ -186,6 +210,13 @@ namespace Ugpa.Json.Serialization.Tests
         private class TestObjectY : TestObjectX
         {
             internal IEnumerable<int> PropertyY { get; } = new List<int>();
+        }
+
+        private class TestObjectZ
+        {
+            public TestObjectZ(int ctorParameter)
+            {
+            }
         }
 
         #endregion

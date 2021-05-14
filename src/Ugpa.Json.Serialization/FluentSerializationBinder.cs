@@ -6,8 +6,8 @@ namespace Ugpa.Json.Serialization
 {
     internal sealed class FluentSerializationBinder : DefaultSerializationBinder
     {
-        private readonly Dictionary<Type, string> nameBindings = new Dictionary<Type, string>();
-        private readonly Dictionary<string, Type> typeBindings = new Dictionary<string, Type>();
+        private readonly Dictionary<Type, string> nameBindings = new();
+        private readonly Dictionary<string, Type> typeBindings = new();
 
         public void AddBinding(Type type, string typeName)
         {
@@ -15,7 +15,7 @@ namespace Ugpa.Json.Serialization
             typeBindings.Add(typeName, type);
         }
 
-        public override void BindToName(Type serializedType, out string assemblyName, out string typeName)
+        public override void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
         {
             if (nameBindings.TryGetValue(serializedType, out typeName))
             {
@@ -27,10 +27,12 @@ namespace Ugpa.Json.Serialization
             }
         }
 
-        public override Type BindToType(string assemblyName, string typeName)
+        public override Type BindToType(string? assemblyName, string typeName)
         {
             if (typeBindings.TryGetValue(typeName, out var type))
+            {
                 return type;
+            }
 
             return base.BindToType(assemblyName, typeName);
         }
