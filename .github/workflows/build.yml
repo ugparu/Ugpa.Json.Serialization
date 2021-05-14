@@ -7,7 +7,6 @@ on:
   pull_request:
     branches:
     - develop
-    - master
 
 jobs:
   build_and_test:
