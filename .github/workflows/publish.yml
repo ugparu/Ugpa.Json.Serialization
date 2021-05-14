@@ -26,4 +26,4 @@ jobs:
     - run: dotnet build .\Ugpa.Json.Serialization.sln -c release --no-restore
     - run: dotnet test .\Ugpa.Json.Serialization.sln -c release --no-build
     - run: nuget pack .\src\Ugpa.Json.Serialization.nuspec -properties Configuration=Release
-    - run: nuget push Ugpa.Json.Serialization.*.nupkg
+    - run: nuget push Ugpa.Json.Serialization.*.nupkg -src https://api.nuget.org/v3/index.json
