@@ -1,13 +1,12 @@
 name: build, test and publish
 
 on:
-  workflow_dispatch:
   release:
     types:
     - released
 
 jobs:
-  build_and_test:
+  build_test_publish:
 
     runs-on: windows-latest
 
