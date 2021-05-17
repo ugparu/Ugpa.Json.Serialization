@@ -2,6 +2,7 @@
 This repository contains a simple implementation of fluent configurator for [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) serializer.
 
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/ugparu/Ugpa.Json.Serialization/build%20and%20test/develop?label=develop)
+![Nuget](https://img.shields.io/nuget/v/Ugpa.Json.Serialization)
 
 ## Important notes
 - Configurator is compatible only with reference types.
