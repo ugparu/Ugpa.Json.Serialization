@@ -52,11 +52,11 @@ namespace Ugpa.Json.Serialization
 
         /// <inheritdoc/>
         public void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
-            => binder.BindToName(serializedType, out assemblyName, out typeName);
+            => ((ISerializationBinder)binder).BindToName(serializedType, out assemblyName, out typeName);
 
         /// <inheritdoc/>
         public Type BindToType(string? assemblyName, string typeName)
-            => binder.BindToType(assemblyName, typeName);
+            => ((ISerializationBinder)binder).BindToType(assemblyName, typeName);
 
         /// <inheritdoc/>
         public JsonContract ResolveContract(Type type)
