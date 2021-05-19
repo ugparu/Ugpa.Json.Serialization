@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>Ugpa.Json.Serialization</id>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <authors>pleshakovdv@ugpa.ru</authors>
     <owners>pleshakovdv@ugpa.ru</owners>
     <projectUrl>https://github.com/ugparu/Ugpa.Json.Serialization</projectUrl>
