@@ -20,8 +20,8 @@ namespace Ugpa.Json.Serialization
         {
             var inheritanceProperties = properties
                 .Where(_ =>
-                    _.Key != member.DeclaringType &&
-                    (_.Key.IsAssignableFrom(member.DeclaringType) || member.DeclaringType.IsAssignableFrom(_.Key)))
+                    _.Key != member.ReflectedType &&
+                    (_.Key.IsAssignableFrom(member.ReflectedType) || member.ReflectedType.IsAssignableFrom(_.Key)))
                 .SelectMany(_ => _.Value)
                 .Where(_ => _.Value.Name == name)
                 .ToArray();
@@ -36,10 +36,10 @@ namespace Ugpa.Json.Serialization
                     inheritanceProperties[0].Key.Name));
             }
 
-            if (!properties.TryGetValue(member.DeclaringType, out var typeInfo))
+            if (!properties.TryGetValue(member.ReflectedType, out var typeInfo))
             {
                 typeInfo = new();
-                properties[member.DeclaringType] = typeInfo;
+                properties[member.ReflectedType] = typeInfo;
             }
 
             var propertyInfo = typeInfo.Where(_ => _.Value.Name == name).ToArray();
@@ -47,7 +47,7 @@ namespace Ugpa.Json.Serialization
             {
                 throw new ArgumentException(string.Format(
                     Resources.FluentContractResolver_PropertyNameConflict,
-                    member.DeclaringType,
+                    member.ReflectedType,
                     name,
                     propertyInfo[0].Key.Name));
             }
@@ -98,12 +98,36 @@ namespace Ugpa.Json.Serialization
         {
             var members = base.GetSerializableMembers(objectType);
 
-            var configuredMembers = properties
-                .Where(_ => _.Key.IsAssignableFrom(objectType))
-                .SelectMany(_ => _.Value.Keys)
-                .ToArray();
+            do
+            {
+                if (properties.TryGetValue(objectType, out var cfg))
+                {
+                    foreach (var member in cfg.Keys)
+                    {
+                        if (!members.Contains(member))
+                        {
+                            if (member is PropertyInfo property)
+                            {
+                                var overridenMember = members
+                                    .OfType<PropertyInfo>()
+                                    .FirstOrDefault(_ => _.GetMethod.GetBaseDefinition() == property.GetMethod.GetBaseDefinition());
 
-            members.AddRange(configuredMembers.Except(members));
+                                if (overridenMember is null)
+                                {
+                                    members.Add(member);
+                                }
+                            }
+                            else
+                            {
+                                members.Add(member);
+                            }
+                        }
+                    }
+                }
+
+                objectType = objectType.BaseType;
+            }
+            while (objectType is not null);
 
             return members;
         }
@@ -112,10 +136,10 @@ namespace Ugpa.Json.Serialization
         {
             var property = base.CreateProperty(member, memberSerialization);
 
-            if (properties.TryGetValue(member.DeclaringType, out var typeInfo) && typeInfo.TryGetValue(member, out var propertyInfo))
+            if (FindPropertyConfiguration(member, out var name, out var isRequired))
             {
-                property.PropertyName = propertyInfo.Name;
-                property.Required = propertyInfo.IsRequired switch
+                property.PropertyName = name;
+                property.Required = isRequired switch
                 {
                     true => Required.Always,
                     false when AllowNullValues => Required.Default,
@@ -137,6 +161,74 @@ namespace Ugpa.Json.Serialization
             }
 
             return property;
+        }
+
+        private bool FindPropertyConfiguration(MemberInfo member, out string? name, out bool isRequired)
+        {
+            // Trying to find explicit property configuration.
+            if (properties.TryGetValue(member.ReflectedType, out var typeInfo) && typeInfo.TryGetValue(member, out var propertyInfo))
+            {
+                name = propertyInfo.Name;
+                isRequired = propertyInfo.IsRequired;
+                return true;
+            }
+
+            if (member is PropertyInfo property)
+            {
+                // Trying to find property configuration in base classes.
+                var baseType = property.ReflectedType.BaseType;
+                while (baseType is not null)
+                {
+                    if (properties.TryGetValue(baseType, out var baseTypeInfo))
+                    {
+                        var baseProperty = baseTypeInfo.Keys
+                            .OfType<PropertyInfo>()
+                            .FirstOrDefault(_ => _.GetMethod.GetBaseDefinition() == property.GetMethod.GetBaseDefinition());
+
+                        if (baseProperty is not null)
+                        {
+                            var basePropertyInfo = baseTypeInfo[baseProperty];
+                            name = basePropertyInfo.Name;
+                            isRequired = basePropertyInfo.IsRequired;
+                            return true;
+                        }
+                    }
+
+                    baseType = baseType.BaseType;
+                }
+
+                // Trying to find property configuration from interfaces.
+                foreach (var i in property.ReflectedType.GetInterfaces())
+                {
+                    if (properties.TryGetValue(i, out var interfaceInfo))
+                    {
+                        var map = property.DeclaringType.GetInterfaceMap(i);
+                        var index = Array.IndexOf(map.TargetMethods, property.GetMethod);
+
+                        if (index != -1)
+                        {
+                            var iProperty = i
+                                .FindMembers(
+                                    MemberTypes.Property,
+                                    BindingFlags.Instance | BindingFlags.Public,
+                                    (p, _) => ((PropertyInfo)p).GetMethod == map.InterfaceMethods[index],
+                                    null)
+                                .First();
+
+                            if (interfaceInfo.TryGetValue(iProperty, out var iPropertyInfo))
+                            {
+                                name = iPropertyInfo.Name;
+                                isRequired = iPropertyInfo.IsRequired;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            name = default;
+            isRequired = default;
+            return false;
         }
     }
 }
