@@ -44,6 +44,26 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void ErrorOnPropertyMultipleConfigurations()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA1", false);
+
+            Assert.Throws<ArgumentException>(
+                () => resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA2", false));
+        }
+
+        [Fact]
+        public void ErrorOnPropertyMultipleConfigurationsForDerivedType()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+
+            Assert.Throws<ArgumentException>(
+                () => resolver.AddProperty(typeof(TestObjectB).GetProperty(nameof(TestObjectA.Property1)), "propA", false));
+        }
+
+        [Fact]
         public void ErrorOnPropertyNameConflictConfiguration()
         {
             var resolver = new FluentContractResolver();
@@ -105,12 +125,142 @@ namespace Ugpa.Json.Serialization.Tests
 
             Assert.Equal(5, contract.Properties.Count);
 
-            Assert.Equal(nameof(TestObjectA.Property1), contract.Properties["propA"].UnderlyingName);
-            Assert.Equal(nameof(TestObjectA.Property2), contract.Properties[nameof(TestObjectA.Property2)].UnderlyingName);
-            Assert.Equal(nameof(TestObjectA.Property3), contract.Properties[nameof(TestObjectA.Property3)].UnderlyingName);
-
+            Assert.Equal(nameof(TestObjectB.Property1), contract.Properties["propA"].UnderlyingName);
+            Assert.Equal(nameof(TestObjectB.Property2), contract.Properties[nameof(TestObjectA.Property2)].UnderlyingName);
+            Assert.Equal(nameof(TestObjectB.Property3), contract.Properties[nameof(TestObjectA.Property3)].UnderlyingName);
             Assert.Equal(nameof(TestObjectB.Property4), contract.Properties["propD"].UnderlyingName);
             Assert.Equal(nameof(TestObjectB.Property5), contract.Properties[nameof(TestObjectB.Property5)].UnderlyingName);
+
+            Assert.Equal(typeof(TestObjectA), contract.Properties["propA"].DeclaringType);
+            Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA.Property2)].DeclaringType);
+            Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA.Property3)].DeclaringType);
+            Assert.Equal(typeof(TestObjectB), contract.Properties["propD"].DeclaringType);
+            Assert.Equal(typeof(TestObjectB), contract.Properties[nameof(TestObjectB.Property5)].DeclaringType);
+        }
+
+        [Fact]
+        public void OverridenPropertyConfigurationInherits()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA2)));
+
+            Assert.Equal(3, contract.Properties.Count);
+
+            Assert.Equal(nameof(TestObjectA2.Property1), contract.Properties["propA"].UnderlyingName);
+            Assert.Equal(nameof(TestObjectA2.Property2), contract.Properties[nameof(TestObjectA2.Property2)].UnderlyingName);
+            Assert.Equal(nameof(TestObjectA2.Property3), contract.Properties[nameof(TestObjectA2.Property3)].UnderlyingName);
+
+            Assert.Equal(typeof(TestObjectA2), contract.Properties["propA"].DeclaringType);
+            Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA2.Property2)].DeclaringType);
+            Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA2.Property3)].DeclaringType);
+        }
+
+        [Fact]
+        public void OverridenPropertyIntermediateConfigurationInherits()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA22)));
+
+            Assert.Equal(3, contract.Properties.Count);
+
+            Assert.Equal(nameof(TestObjectA22.Property1), contract.Properties["propA"].UnderlyingName);
+            Assert.Equal(nameof(TestObjectA22.Property2), contract.Properties[nameof(TestObjectA2.Property2)].UnderlyingName);
+            Assert.Equal(nameof(TestObjectA22.Property3), contract.Properties[nameof(TestObjectA2.Property3)].UnderlyingName);
+
+            Assert.Equal(typeof(TestObjectA22), contract.Properties["propA"].DeclaringType);
+            Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA2.Property2)].DeclaringType);
+            Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA2.Property3)].DeclaringType);
+        }
+
+        [Fact]
+        public void HiddenPropertyConfigurationInherits()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA3)));
+            Assert.Equal(4, contract.Properties.Count);
+
+            Assert.Equal(nameof(TestObjectA3.Property1), contract.Properties["propA"].UnderlyingName);
+            Assert.Equal(nameof(TestObjectA3.Property1), contract.Properties[nameof(TestObjectA3.Property1)].UnderlyingName);
+
+            Assert.Equal(typeof(TestObjectA), contract.Properties["propA"].DeclaringType);
+            Assert.Equal(typeof(TestObjectA3), contract.Properties[nameof(TestObjectA3.Property1)].DeclaringType);
+        }
+
+        [Fact]
+        public void ConfiguredInterfacePropertiesInherits()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)), "propA", false);
+            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property3)), "propC", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
+
+            Assert.Equal(3, contract.Properties.Count);
+
+            Assert.Equal(nameof(TestObjectA.Property1), contract.Properties["propA"].UnderlyingName);
+            Assert.Equal(nameof(TestObjectA.Property2), contract.Properties[nameof(TestObjectA.Property2)].UnderlyingName);
+            Assert.Equal(nameof(TestObjectA.Property3), contract.Properties["propC"].UnderlyingName);
+
+            Assert.Equal(typeof(TestObjectA), contract.Properties["propA"].DeclaringType);
+            Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA.Property2)].DeclaringType);
+            Assert.Equal(typeof(TestObjectA), contract.Properties["propC"].DeclaringType);
+        }
+
+        [Fact]
+        public void OverridenPropertyConfigurationOverlap()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+            resolver.AddProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA2.Property1)), "propA2", false);
+
+            var contractA = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
+            Assert.Equal(3, contractA.Properties.Count);
+            Assert.Equal(nameof(TestObjectA.Property1), contractA.Properties["propA"].UnderlyingName);
+            Assert.Equal(typeof(TestObjectA), contractA.Properties["propA"].DeclaringType);
+
+            var contractA2 = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA2)));
+            Assert.Equal(3, contractA2.Properties.Count);
+            Assert.Equal(nameof(TestObjectA2.Property1), contractA2.Properties["propA2"].UnderlyingName);
+            Assert.Equal(typeof(TestObjectA2), contractA2.Properties["propA2"].DeclaringType);
+        }
+
+        [Fact]
+        public void HiddenPropertyConfigurationOverlap()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+            resolver.AddProperty(typeof(TestObjectA3).GetProperty(nameof(TestObjectA3.Property1)), "propA2", false);
+
+            var contractA = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
+            Assert.Equal(3, contractA.Properties.Count);
+            Assert.Equal(nameof(TestObjectA.Property1), contractA.Properties["propA"].UnderlyingName);
+            Assert.Equal(typeof(TestObjectA), contractA.Properties["propA"].DeclaringType);
+
+            var contractA3 = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA3)));
+            Assert.Equal(4, contractA3.Properties.Count);
+            Assert.Equal(nameof(TestObjectA3.Property1), contractA3.Properties["propA"].UnderlyingName);
+            Assert.Equal(nameof(TestObjectA3.Property1), contractA3.Properties["propA2"].UnderlyingName);
+            Assert.Equal(typeof(TestObjectA), contractA3.Properties["propA"].DeclaringType);
+            Assert.Equal(typeof(TestObjectA3), contractA3.Properties["propA2"].DeclaringType);
+        }
+
+        [Fact]
+        public void InterfacePropertyConfigurationOverlap()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)), "propA1", false);
+            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA2", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
+            Assert.Equal(3, contract.Properties.Count);
+            Assert.Equal(nameof(ITestObject.Property1), contract.Properties["propA2"].UnderlyingName);
+            Assert.Equal(typeof(TestObjectA), contract.Properties["propA2"].DeclaringType);
         }
 
         [Fact]
@@ -151,6 +301,8 @@ namespace Ugpa.Json.Serialization.Tests
             Assert.Equal(2, contract.Properties.Count);
             Assert.Equal(nameof(TestObjectX.PropertyX), contract.Properties["x"].UnderlyingName);
             Assert.Equal(nameof(TestObjectY.PropertyY), contract.Properties["y"].UnderlyingName);
+            Assert.Equal(typeof(TestObjectX), contract.Properties["x"].DeclaringType);
+            Assert.Equal(typeof(TestObjectY), contract.Properties["y"].DeclaringType);
             Assert.True(contract.Properties["x"].Readable);
             Assert.True(contract.Properties["y"].Readable);
         }
@@ -181,13 +333,33 @@ namespace Ugpa.Json.Serialization.Tests
 
         #region Тестовые объекты
 
-        private class TestObjectA
+        private interface ITestObject
         {
-            public int Property1 { get; set; }
+            int Property1 { get; }
+        }
+
+        private class TestObjectA : ITestObject
+        {
+            public virtual int Property1 { get; set; }
 
             public int? Property2 { get; private set; }
 
             public string Property3 { get; }
+        }
+
+        private class TestObjectA2 : TestObjectA
+        {
+            public override int Property1 { get; set; }
+        }
+
+        private class TestObjectA22 : TestObjectA2
+        {
+            public override int Property1 { get; set; }
+        }
+
+        private class TestObjectA3 : TestObjectA
+        {
+            public new int Property1 { get; set; }
         }
 
         private class TestObjectB : TestObjectA
