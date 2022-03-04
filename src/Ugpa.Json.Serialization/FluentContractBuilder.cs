@@ -9,7 +9,6 @@ namespace Ugpa.Json.Serialization
     /// </summary>
     /// <typeparam name="T">Configured type.</typeparam>
     public sealed class FluentContractBuilder<T>
-        where T : class
     {
         private readonly FluentContractResolver resolver;
         private readonly FluentSerializationBinder binder;
