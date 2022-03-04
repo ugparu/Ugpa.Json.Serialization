@@ -56,25 +56,23 @@ namespace Ugpa.Json.Serialization
         }
 
         public void SetFactory<T>(Func<T> factory)
-            where T : class
         {
             if (factory is null)
             {
                 throw new ArgumentNullException(nameof(factory));
             }
 
-            defaultCreators[typeof(T)] = factory;
+            defaultCreators[typeof(T)] = () => factory()!;
         }
 
         public void SetFactory<T>(Func<object[], T> factory)
-            where T : class
         {
             if (factory is null)
             {
                 throw new ArgumentNullException(nameof(factory));
             }
 
-            overrideCreators[typeof(T)] = new ObjectConstructor<object>(factory!);
+            overrideCreators[typeof(T)] = new ObjectConstructor<object>(_ => factory(_));
         }
 
         protected override JsonContract CreateContract(Type objectType)
