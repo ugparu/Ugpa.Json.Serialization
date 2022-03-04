@@ -37,7 +37,6 @@ namespace Ugpa.Json.Serialization
         /// <param name="builder">Configure delegate.</param>
         /// <returns>This instance of configurator.</returns>
         public FluentContext Configure<T>(Action<FluentContractBuilder<T>> builder)
-            where T : class
         {
             if (configuredTypes.Contains(typeof(T)))
             {
