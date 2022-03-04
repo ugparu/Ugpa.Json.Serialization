@@ -316,7 +316,11 @@ namespace Ugpa.Json.Serialization.Tests
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectZ));
 
-            Assert.Same(factory, contract.DefaultCreator);
+            var extractedFactory = contract.DefaultCreator.Target.GetType()
+                .GetField(nameof(factory))
+                .GetValue(contract.DefaultCreator.Target);
+
+            Assert.Same(factory, extractedFactory);
         }
 
         [Fact]
@@ -328,7 +332,11 @@ namespace Ugpa.Json.Serialization.Tests
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectZ));
 
-            Assert.Same(factory, contract.OverrideCreator.Target);
+            var extractedFactory = contract.OverrideCreator.Target.GetType()
+                .GetField(nameof(factory))
+                .GetValue(contract.OverrideCreator.Target);
+
+            Assert.Same(factory, extractedFactory);
         }
 
         #region Тестовые объекты
