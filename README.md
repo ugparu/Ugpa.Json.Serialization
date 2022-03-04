@@ -5,7 +5,6 @@ This repository contains a simple implementation of fluent configurator for [New
 [![Nuget](https://img.shields.io/nuget/v/Ugpa.Json.Serialization)](https://www.nuget.org/packages/Ugpa.Json.Serialization)
 
 ## Important notes
-- Configurator is compatible only with reference types.
 - Configurator is based on `IContractResolver` and `ISerializationBinder` interfaces implementation, so it's incompatible with any other resolvers and binders.
 
 ## Configuring
