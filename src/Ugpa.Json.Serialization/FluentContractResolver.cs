@@ -11,6 +11,7 @@ namespace Ugpa.Json.Serialization
     internal sealed class FluentContractResolver : DefaultContractResolver
     {
         private readonly Dictionary<Type, Dictionary<MemberInfo, (string Name, bool IsRequired)>> properties = new();
+        private readonly Dictionary<Type, HashSet<MemberInfo>> ignored = new();
         private readonly Dictionary<Type, Func<object>> defaultCreators = new();
         private readonly Dictionary<Type, ObjectConstructor<object>> overrideCreators = new();
 
@@ -53,6 +54,17 @@ namespace Ugpa.Json.Serialization
             }
 
             typeInfo.Add(member, (name, isRequired));
+        }
+
+        public void SkipProperty(MemberInfo member)
+        {
+            if (!ignored.TryGetValue(member.ReflectedType, out var typeInfo))
+            {
+                typeInfo = new();
+                ignored[member.ReflectedType] = typeInfo;
+            }
+
+            typeInfo.Add(member);
         }
 
         public void SetFactory<T>(Func<T> factory)
@@ -109,6 +121,24 @@ namespace Ugpa.Json.Serialization
                             if (!members.Any(_ => _.DeclaringType == member.DeclaringType && _.Name == member.Name))
                                 members.Add(member);
 
+                            return true;
+                        }
+
+                        return false;
+                    });
+            }
+
+            foreach (var member in members.ToArray())
+            {
+                FindPropertyConfiguration(
+                    ignored,
+                    _ => _,
+                    member,
+                    (ti, m) =>
+                    {
+                        if (ti.Contains(m))
+                        {
+                            members.Remove(member);
                             return true;
                         }
 
