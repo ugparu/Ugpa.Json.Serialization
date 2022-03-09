@@ -223,7 +223,9 @@ namespace Ugpa.Json.Serialization
                     {
                         var baseProperty = getMembers(baseTypeInfo)
                             .OfType<PropertyInfo>()
-                            .FirstOrDefault(_ => _.GetMethod.GetBaseDefinition().DeclaringType == property.GetMethod.GetBaseDefinition().DeclaringType);
+                            .FirstOrDefault(_ =>
+                                _.Name == property.Name &&
+                                _.GetMethod.GetBaseDefinition().DeclaringType == property.GetMethod.GetBaseDefinition().DeclaringType);
 
                         if (baseProperty is not null && onFound(baseTypeInfo, baseProperty))
                             return true;

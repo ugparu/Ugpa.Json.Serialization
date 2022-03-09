@@ -213,7 +213,7 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void OverridenSkipePropertyIntermediateConfigurationInherits()
+        public void OverridenSkipedPropertyIntermediateConfigurationInherits()
         {
             var resolver = new FluentContractResolver();
             resolver.SkipProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA.Property1)));
@@ -413,6 +413,20 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void MultipleBaseInternalPropertiesConfiguredCorrectly()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX), BindingFlags.Instance | BindingFlags.NonPublic), "propX", false);
+            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX2), BindingFlags.Instance | BindingFlags.NonPublic), "propX2", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectY)));
+
+            Assert.Equal(2, contract.Properties.Count);
+            Assert.Equal(nameof(TestObjectX.PropertyX), contract.Properties["propX"].UnderlyingName);
+            Assert.Equal(nameof(TestObjectX.PropertyX2), contract.Properties["propX2"].UnderlyingName);
+        }
+
+        [Fact]
         public void CustomDefaultConstructorSet()
         {
             var resolver = new FluentContractResolver();
@@ -490,6 +504,8 @@ namespace Ugpa.Json.Serialization.Tests
         private class TestObjectX
         {
             internal int PropertyX { get; set; }
+
+            internal int PropertyX2 { get; set; }
         }
 
         private class TestObjectY : TestObjectX
