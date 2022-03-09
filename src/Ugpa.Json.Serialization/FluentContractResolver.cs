@@ -118,8 +118,8 @@ namespace Ugpa.Json.Serialization
                     {
                         if (ti.ContainsKey(m))
                         {
-                            if (!members.Any(_ => _.DeclaringType == member.DeclaringType && _.Name == member.Name))
-                                members.Add(member);
+                            if (!members.Any(_ => _.DeclaringType == m.DeclaringType && _.Name == m.Name))
+                                members.Add(m);
 
                             return true;
                         }

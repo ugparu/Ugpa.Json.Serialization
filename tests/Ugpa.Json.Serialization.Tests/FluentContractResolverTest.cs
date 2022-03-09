@@ -450,6 +450,10 @@ namespace Ugpa.Json.Serialization.Tests
 
             Assert.Equal(nameof(TestObjectX.PropertyX2), contract.Properties["propX2"].UnderlyingName);
             Assert.True(contract.Properties["propX2"].Writable);
+
+            var obj = new TestObjectY();
+            contract.Properties["propX2"].ValueProvider.SetValue(obj, 123);
+            Assert.Equal(123, obj.PropertyX2);
         }
 
         [Fact]
