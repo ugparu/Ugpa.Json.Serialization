@@ -239,7 +239,7 @@ namespace Ugpa.Json.Serialization
                 {
                     if (configuration.TryGetValue(i, out var interfaceInfo))
                     {
-                        var map = property.DeclaringType.GetInterfaceMap(i);
+                        var map = property.ReflectedType.GetInterfaceMap(i);
                         var index = Array.IndexOf(map.TargetMethods, property.GetMethod);
 
                         if (index != -1)

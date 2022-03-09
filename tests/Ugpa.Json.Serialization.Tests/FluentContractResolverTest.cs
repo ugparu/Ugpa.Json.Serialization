@@ -288,6 +288,20 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void MultipleInterfacesPropertiesResolverCorrectly()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)), "prop1", false);
+            resolver.AddProperty(typeof(ITestObject2).GetProperty(nameof(ITestObject2.Property4)), "prop4", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectB)));
+
+            Assert.Equal(5, contract.Properties.Count);
+            Assert.Equal(nameof(ITestObject.Property1), contract.Properties["prop1"].UnderlyingName);
+            Assert.Equal(nameof(ITestObject2.Property4), contract.Properties["prop4"].UnderlyingName);
+        }
+
+        [Fact]
         public void OverridenPropertyConfigurationOverlap()
         {
             var resolver = new FluentContractResolver();
@@ -465,6 +479,11 @@ namespace Ugpa.Json.Serialization.Tests
             int Property1 { get; }
         }
 
+        private interface ITestObject2
+        {
+            bool Property4 { get; }
+        }
+
         private class TestObjectA : ITestObject
         {
             public virtual int Property1 { get; set; }
@@ -489,7 +508,7 @@ namespace Ugpa.Json.Serialization.Tests
             public new int Property1 { get; set; }
         }
 
-        private class TestObjectB : TestObjectA
+        private class TestObjectB : TestObjectA, ITestObject2
         {
             public bool Property4 { get; set; }
 
