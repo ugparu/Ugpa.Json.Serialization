@@ -153,7 +153,7 @@ namespace Ugpa.Json.Serialization
         {
             var property = base.CreateProperty(member, memberSerialization);
 
-            if (FindPropertyConfiguration(member, out var name, out var isRequired))
+            if (FindPropertyConfiguration(ref member, out var name, out var isRequired))
             {
                 property.PropertyName = name;
                 property.Required = isRequired switch
@@ -180,8 +180,9 @@ namespace Ugpa.Json.Serialization
             return property;
         }
 
-        private bool FindPropertyConfiguration(MemberInfo member, out string? name, out bool isRequired)
+        private bool FindPropertyConfiguration(ref MemberInfo member, out string? name, out bool isRequired)
         {
+            var memberInternal = default(MemberInfo);
             var nameInternal = default(string);
             var isRequiredInternal = default(bool);
 
@@ -193,6 +194,7 @@ namespace Ugpa.Json.Serialization
                 {
                     if (ti.TryGetValue(m, out var propertyInfo))
                     {
+                        memberInternal = m;
                         nameInternal = propertyInfo.Name;
                         isRequiredInternal = propertyInfo.IsRequired;
                         return true;
@@ -200,6 +202,9 @@ namespace Ugpa.Json.Serialization
 
                     return false;
                 });
+
+            if (memberInternal is not null)
+                member = memberInternal;
 
             name = nameInternal;
             isRequired = isRequiredInternal;

@@ -441,6 +441,18 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void InternalPropertyWithPrivateSetIsWritableForDerivedClass()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX2), BindingFlags.Instance | BindingFlags.NonPublic), "propX2", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectY)));
+
+            Assert.Equal(nameof(TestObjectX.PropertyX2), contract.Properties["propX2"].UnderlyingName);
+            Assert.True(contract.Properties["propX2"].Writable);
+        }
+
+        [Fact]
         public void CustomDefaultConstructorSet()
         {
             var resolver = new FluentContractResolver();
@@ -524,7 +536,7 @@ namespace Ugpa.Json.Serialization.Tests
         {
             internal int PropertyX { get; set; }
 
-            internal int PropertyX2 { get; set; }
+            internal int PropertyX2 { get; private set; }
         }
 
         private class TestObjectY : TestObjectX
