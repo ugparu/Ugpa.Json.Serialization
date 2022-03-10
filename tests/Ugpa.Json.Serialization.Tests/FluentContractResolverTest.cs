@@ -44,6 +44,15 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void DuplicatePropertySkipConfigurationSuccess()
+        {
+            var resolver = new FluentContractResolver();
+            var property = typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1));
+            resolver.SkipProperty(property);
+            resolver.SkipProperty(property);
+        }
+
+        [Fact]
         public void ErrorOnPropertyMultipleConfigurations()
         {
             var resolver = new FluentContractResolver();
@@ -139,6 +148,20 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void ConfiguredSkipedPropertiesInherits()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.SkipProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)));
+            resolver.SkipProperty(typeof(TestObjectB).GetProperty(nameof(TestObjectB.Property4)));
+
+            var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectB));
+
+            Assert.Equal(3, contract.Properties.Count);
+            Assert.False(contract.Properties.Contains(nameof(TestObjectA.Property1)));
+            Assert.False(contract.Properties.Contains(nameof(TestObjectB.Property4)));
+        }
+
+        [Fact]
         public void OverridenPropertyConfigurationInherits()
         {
             var resolver = new FluentContractResolver();
@@ -155,6 +178,19 @@ namespace Ugpa.Json.Serialization.Tests
             Assert.Equal(typeof(TestObjectA2), contract.Properties["propA"].DeclaringType);
             Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA2.Property2)].DeclaringType);
             Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA2.Property3)].DeclaringType);
+        }
+
+        [Fact]
+        public void OverridenSkipedPropertyConfigurationInherits()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.SkipProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)));
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA2)));
+
+            Assert.Equal(2, contract.Properties.Count);
+
+            Assert.False(contract.Properties.Contains(nameof(TestObjectA2.Property1)));
         }
 
         [Fact]
@@ -177,6 +213,19 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void OverridenSkipedPropertyIntermediateConfigurationInherits()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.SkipProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA.Property1)));
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA22)));
+
+            Assert.Equal(2, contract.Properties.Count);
+
+            Assert.False(contract.Properties.Contains(nameof(TestObjectA22.Property1)));
+        }
+
+        [Fact]
         public void HiddenPropertyConfigurationInherits()
         {
             var resolver = new FluentContractResolver();
@@ -190,6 +239,17 @@ namespace Ugpa.Json.Serialization.Tests
 
             Assert.Equal(typeof(TestObjectA), contract.Properties["propA"].DeclaringType);
             Assert.Equal(typeof(TestObjectA3), contract.Properties[nameof(TestObjectA3.Property1)].DeclaringType);
+        }
+
+        [Fact]
+        public void HiddenPropertyOverlapsSkipedProperty()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.SkipProperty(typeof(TestObjectA3).GetProperty(nameof(TestObjectA3.Property1)));
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA3)));
+            Assert.Equal(3, contract.Properties.Count);
+            Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA3.Property1)].DeclaringType);
         }
 
         [Fact]
@@ -213,6 +273,35 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void ConfiguredInterfaceSkipedPropertiesInherits()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.SkipProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)));
+            resolver.SkipProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property3)));
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
+
+            Assert.Single(contract.Properties);
+
+            Assert.False(contract.Properties.Contains(nameof(TestObjectA.Property1)));
+            Assert.False(contract.Properties.Contains(nameof(TestObjectA.Property3)));
+        }
+
+        [Fact]
+        public void MultipleInterfacesPropertiesResolverCorrectly()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)), "prop1", false);
+            resolver.AddProperty(typeof(ITestObject2).GetProperty(nameof(ITestObject2.Property4)), "prop4", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectB)));
+
+            Assert.Equal(5, contract.Properties.Count);
+            Assert.Equal(nameof(ITestObject.Property1), contract.Properties["prop1"].UnderlyingName);
+            Assert.Equal(nameof(ITestObject2.Property4), contract.Properties["prop4"].UnderlyingName);
+        }
+
+        [Fact]
         public void OverridenPropertyConfigurationOverlap()
         {
             var resolver = new FluentContractResolver();
@@ -228,6 +317,22 @@ namespace Ugpa.Json.Serialization.Tests
             Assert.Equal(3, contractA2.Properties.Count);
             Assert.Equal(nameof(TestObjectA2.Property1), contractA2.Properties["propA2"].UnderlyingName);
             Assert.Equal(typeof(TestObjectA2), contractA2.Properties["propA2"].DeclaringType);
+        }
+
+        [Fact]
+        public void OverridenSkipedPropertyConfigurationOverlap()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.SkipProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)));
+            resolver.SkipProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA2.Property1)));
+
+            var contractA = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
+            Assert.Equal(2, contractA.Properties.Count);
+            Assert.False(contractA.Properties.Contains(nameof(TestObjectA.Property1)));
+
+            var contractA2 = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA2)));
+            Assert.Equal(2, contractA2.Properties.Count);
+            Assert.False(contractA2.Properties.Contains(nameof(TestObjectA2.Property1)));
         }
 
         [Fact]
@@ -261,6 +366,20 @@ namespace Ugpa.Json.Serialization.Tests
             Assert.Equal(3, contract.Properties.Count);
             Assert.Equal(nameof(ITestObject.Property1), contract.Properties["propA2"].UnderlyingName);
             Assert.Equal(typeof(TestObjectA), contract.Properties["propA2"].DeclaringType);
+        }
+
+        [Fact]
+        public void SkippedPropertyPriorityOverConfiguration()
+        {
+            var resolver = new FluentContractResolver();
+            var property = typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1));
+            resolver.AddProperty(property, "propA1", false);
+            resolver.SkipProperty(property);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
+
+            Assert.Equal(2, contract.Properties.Count);
+            Assert.False(contract.Properties.Contains(nameof(TestObjectA.Property1)));
         }
 
         [Fact]
@@ -308,6 +427,36 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
+        public void MultipleBaseInternalPropertiesConfiguredCorrectly()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX), BindingFlags.Instance | BindingFlags.NonPublic), "propX", false);
+            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX2), BindingFlags.Instance | BindingFlags.NonPublic), "propX2", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectY)));
+
+            Assert.Equal(2, contract.Properties.Count);
+            Assert.Equal(nameof(TestObjectX.PropertyX), contract.Properties["propX"].UnderlyingName);
+            Assert.Equal(nameof(TestObjectX.PropertyX2), contract.Properties["propX2"].UnderlyingName);
+        }
+
+        [Fact]
+        public void InternalPropertyWithPrivateSetIsWritableForDerivedClass()
+        {
+            var resolver = new FluentContractResolver();
+            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX2), BindingFlags.Instance | BindingFlags.NonPublic), "propX2", false);
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectY)));
+
+            Assert.Equal(nameof(TestObjectX.PropertyX2), contract.Properties["propX2"].UnderlyingName);
+            Assert.True(contract.Properties["propX2"].Writable);
+
+            var obj = new TestObjectY();
+            contract.Properties["propX2"].ValueProvider.SetValue(obj, 123);
+            Assert.Equal(123, obj.PropertyX2);
+        }
+
+        [Fact]
         public void CustomDefaultConstructorSet()
         {
             var resolver = new FluentContractResolver();
@@ -346,6 +495,11 @@ namespace Ugpa.Json.Serialization.Tests
             int Property1 { get; }
         }
 
+        private interface ITestObject2
+        {
+            bool Property4 { get; }
+        }
+
         private class TestObjectA : ITestObject
         {
             public virtual int Property1 { get; set; }
@@ -370,7 +524,7 @@ namespace Ugpa.Json.Serialization.Tests
             public new int Property1 { get; set; }
         }
 
-        private class TestObjectB : TestObjectA
+        private class TestObjectB : TestObjectA, ITestObject2
         {
             public bool Property4 { get; set; }
 
@@ -385,6 +539,8 @@ namespace Ugpa.Json.Serialization.Tests
         private class TestObjectX
         {
             internal int PropertyX { get; set; }
+
+            internal int PropertyX2 { get; private set; }
         }
 
         private class TestObjectY : TestObjectX

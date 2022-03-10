@@ -32,6 +32,20 @@ context.Configure<Employee>(cfg => cfg
     .HasProperty(_ => _.Age, "age", true)); // required property (explicitly).
 ```
 
+### Skipping property
+If there's no need to serialize/deserialize property, you can configure it to be skipped.
+```csharp
+public sealed class Employee
+{
+    public string FirstName { get; init; }    
+    public string LastName { get; init; }
+    public int Age { get; init; }
+}
+...
+context.Configure<Employee>(cfg => cfg
+    .IgnoreProperty(_ => _.Age)); // no need to serialize/deserialize.
+```
+
 ### Type name binding
 You can bind class name to JSON `$type` property.
 ```csharp

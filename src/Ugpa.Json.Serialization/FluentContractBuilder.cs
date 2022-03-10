@@ -62,6 +62,24 @@ namespace Ugpa.Json.Serialization
         }
 
         /// <summary>
+        /// Configures property to be ignored.
+        /// </summary>
+        /// <typeparam name="TProp">Property type.</typeparam>
+        /// <param name="property">Property access expression.</param>
+        /// <returns>This instance of configurator.</returns>
+        public FluentContractBuilder<T> IgnoreProperty<TProp>(Expression<Func<T, TProp>> property)
+        {
+            if (property.Body is not MemberExpression memberExpression)
+            {
+                throw new ArgumentException(Resources.FluentContractBuilder_NotMemberExpression);
+            }
+
+            resolver.SkipProperty(memberExpression.Member);
+
+            return this;
+        }
+
+        /// <summary>
         /// Configures JSON type name.
         /// </summary>
         /// <param name="name">JSON type name.</param>

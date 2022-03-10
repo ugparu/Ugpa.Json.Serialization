@@ -11,6 +11,7 @@ namespace Ugpa.Json.Serialization
     internal sealed class FluentContractResolver : DefaultContractResolver
     {
         private readonly Dictionary<Type, Dictionary<MemberInfo, (string Name, bool IsRequired)>> properties = new();
+        private readonly Dictionary<Type, HashSet<MemberInfo>> ignored = new();
         private readonly Dictionary<Type, Func<object>> defaultCreators = new();
         private readonly Dictionary<Type, ObjectConstructor<object>> overrideCreators = new();
 
@@ -55,6 +56,17 @@ namespace Ugpa.Json.Serialization
             typeInfo.Add(member, (name, isRequired));
         }
 
+        public void SkipProperty(MemberInfo member)
+        {
+            if (!ignored.TryGetValue(member.ReflectedType, out var typeInfo))
+            {
+                typeInfo = new();
+                ignored[member.ReflectedType] = typeInfo;
+            }
+
+            typeInfo.Add(member);
+        }
+
         public void SetFactory<T>(Func<T> factory)
         {
             if (factory is null)
@@ -96,36 +108,43 @@ namespace Ugpa.Json.Serialization
         {
             var members = base.GetSerializableMembers(objectType);
 
-            do
+            foreach (var member in objectType.GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
-                if (properties.TryGetValue(objectType, out var cfg))
-                {
-                    foreach (var member in cfg.Keys)
+                FindPropertyConfiguration(
+                    properties,
+                    _ => _.Keys,
+                    member,
+                    (ti, m) =>
                     {
-                        if (!members.Contains(member))
+                        if (ti.ContainsKey(m))
                         {
-                            if (member is PropertyInfo property)
-                            {
-                                var overridenMember = members
-                                    .OfType<PropertyInfo>()
-                                    .FirstOrDefault(_ => _.GetMethod.GetBaseDefinition() == property.GetMethod.GetBaseDefinition());
+                            if (!members.Any(_ => _.DeclaringType == m.DeclaringType && _.Name == m.Name))
+                                members.Add(m);
 
-                                if (overridenMember is null)
-                                {
-                                    members.Add(member);
-                                }
-                            }
-                            else
-                            {
-                                members.Add(member);
-                            }
+                            return true;
                         }
-                    }
-                }
 
-                objectType = objectType.BaseType;
+                        return false;
+                    });
             }
-            while (objectType is not null);
+
+            foreach (var member in members.ToArray())
+            {
+                FindPropertyConfiguration(
+                    ignored,
+                    _ => _,
+                    member,
+                    (ti, m) =>
+                    {
+                        if (ti.Contains(m))
+                        {
+                            members.Remove(member);
+                            return true;
+                        }
+
+                        return false;
+                    });
+            }
 
             return members;
         }
@@ -134,7 +153,7 @@ namespace Ugpa.Json.Serialization
         {
             var property = base.CreateProperty(member, memberSerialization);
 
-            if (FindPropertyConfiguration(member, out var name, out var isRequired))
+            if (FindPropertyConfiguration(ref member, out var name, out var isRequired))
             {
                 property.PropertyName = name;
                 property.Required = isRequired switch
@@ -161,15 +180,43 @@ namespace Ugpa.Json.Serialization
             return property;
         }
 
-        private bool FindPropertyConfiguration(MemberInfo member, out string? name, out bool isRequired)
+        private bool FindPropertyConfiguration(ref MemberInfo member, out string? name, out bool isRequired)
+        {
+            var memberInternal = default(MemberInfo);
+            var nameInternal = default(string);
+            var isRequiredInternal = default(bool);
+
+            var found = FindPropertyConfiguration(
+                properties,
+                _ => _.Keys,
+                member,
+                (ti, m) =>
+                {
+                    if (ti.TryGetValue(m, out var propertyInfo))
+                    {
+                        memberInternal = m;
+                        nameInternal = propertyInfo.Name;
+                        isRequiredInternal = propertyInfo.IsRequired;
+                        return true;
+                    }
+
+                    return false;
+                });
+
+            if (memberInternal is not null)
+                member = memberInternal;
+
+            name = nameInternal;
+            isRequired = isRequiredInternal;
+
+            return found;
+        }
+
+        private bool FindPropertyConfiguration<T>(Dictionary<Type, T> configuration, Func<T, IEnumerable<MemberInfo>> getMembers, MemberInfo member, Func<T, MemberInfo, bool> onFound)
         {
             // Trying to find explicit property configuration.
-            if (properties.TryGetValue(member.ReflectedType, out var typeInfo) && typeInfo.TryGetValue(member, out var propertyInfo))
-            {
-                name = propertyInfo.Name;
-                isRequired = propertyInfo.IsRequired;
+            if (configuration.TryGetValue(member.ReflectedType, out var typeInfo) && onFound(typeInfo, member))
                 return true;
-            }
 
             if (member is PropertyInfo property)
             {
@@ -177,19 +224,16 @@ namespace Ugpa.Json.Serialization
                 var baseType = property.ReflectedType.BaseType;
                 while (baseType is not null)
                 {
-                    if (properties.TryGetValue(baseType, out var baseTypeInfo))
+                    if (configuration.TryGetValue(baseType, out var baseTypeInfo))
                     {
-                        var baseProperty = baseTypeInfo.Keys
+                        var baseProperty = getMembers(baseTypeInfo)
                             .OfType<PropertyInfo>()
-                            .FirstOrDefault(_ => _.GetMethod.GetBaseDefinition() == property.GetMethod.GetBaseDefinition());
+                            .FirstOrDefault(_ =>
+                                _.Name == property.Name &&
+                                _.GetMethod.GetBaseDefinition().DeclaringType == property.GetMethod.GetBaseDefinition().DeclaringType);
 
-                        if (baseProperty is not null)
-                        {
-                            var basePropertyInfo = baseTypeInfo[baseProperty];
-                            name = basePropertyInfo.Name;
-                            isRequired = basePropertyInfo.IsRequired;
+                        if (baseProperty is not null && onFound(baseTypeInfo, baseProperty))
                             return true;
-                        }
                     }
 
                     baseType = baseType.BaseType;
@@ -198,9 +242,9 @@ namespace Ugpa.Json.Serialization
                 // Trying to find property configuration from interfaces.
                 foreach (var i in property.ReflectedType.GetInterfaces())
                 {
-                    if (properties.TryGetValue(i, out var interfaceInfo))
+                    if (configuration.TryGetValue(i, out var interfaceInfo))
                     {
-                        var map = property.DeclaringType.GetInterfaceMap(i);
+                        var map = property.ReflectedType.GetInterfaceMap(i);
                         var index = Array.IndexOf(map.TargetMethods, property.GetMethod);
 
                         if (index != -1)
@@ -213,19 +257,13 @@ namespace Ugpa.Json.Serialization
                                     null)
                                 .First();
 
-                            if (interfaceInfo.TryGetValue(iProperty, out var iPropertyInfo))
-                            {
-                                name = iPropertyInfo.Name;
-                                isRequired = iPropertyInfo.IsRequired;
+                            if (onFound(interfaceInfo, iProperty))
                                 return true;
-                            }
                         }
                     }
                 }
             }
 
-            name = default;
-            isRequired = default;
             return false;
         }
     }
