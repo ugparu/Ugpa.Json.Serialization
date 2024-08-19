@@ -25,6 +25,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Global", "Global", "{6E725D
 		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{7C255022-5B84-4DBE-9B3D-B67AACE6290F}"
+	ProjectSection(SolutionItems) = preProject
+		doc\Configuring.md = doc\Configuring.md
+		LICENSE = LICENSE
+		README.md = README.md
+		doc\ReleaseNotes.md = doc\ReleaseNotes.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
