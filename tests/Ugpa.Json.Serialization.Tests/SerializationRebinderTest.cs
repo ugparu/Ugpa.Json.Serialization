@@ -1,13 +1,14 @@
-﻿using Xunit;
+﻿using Newtonsoft.Json.Serialization;
+using Xunit;
 
 namespace Ugpa.Json.Serialization.Tests
 {
-    public sealed class FluentSerializationBinderTest
+    public sealed class SerializationRebinderTest
     {
         [Fact]
         public void DefaultBindingMatchTypeName()
         {
-            var binder = new FluentSerializationBinder();
+            ISerializationBinder binder = Configurator.Create().Complete();
 
             binder.BindToName(typeof(TestObjectA), out var asmA, out var typeNameA);
             binder.BindToName(typeof(TestObjectB), out var asmB, out var typeNameB);
@@ -27,10 +28,11 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void ConfiguredBindingIsValid()
         {
-            var binder = new FluentSerializationBinder();
-
-            binder.AddBinding(typeof(TestObjectA), "objA");
-            binder.AddBinding(typeof(TestObjectB), "objB");
+            ISerializationBinder binder = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t.HasContractName("objA"))
+                .Configure<TestObjectB>(t => t.HasContractName("objB"))
+                .Complete();
 
             binder.BindToName(typeof(TestObjectA), out var asmA, out var typeNameA);
             binder.BindToName(typeof(TestObjectB), out var asmB, out var typeNameB);

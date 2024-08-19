@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31129.286
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ugpa.Json.Serialization", "src\Ugpa.Json.Serialization\Ugpa.Json.Serialization.csproj", "{9616EDD9-4652-4155-BEB1-033251F35A2A}"
 EndProject
@@ -18,6 +18,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Miscellaneous", "Miscellane
 		src\Directory.Build.props = src\Directory.Build.props
 		stylecop.json = stylecop.json
 		src\Ugpa.Json.Serialization.nuspec = src\Ugpa.Json.Serialization.nuspec
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Global", "Global", "{6E725D03-7217-4753-8EC5-4AA18A64353B}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Global

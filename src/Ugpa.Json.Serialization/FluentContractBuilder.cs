@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq.Expressions;
-using Ugpa.Json.Serialization.Properties;
 
 namespace Ugpa.Json.Serialization
 {
@@ -8,12 +7,13 @@ namespace Ugpa.Json.Serialization
     /// Represents an fluent configurator for specified type.
     /// </summary>
     /// <typeparam name="T">Configured type.</typeparam>
+    [Obsolete($"This class is obsolete. Use {nameof(TypeConfigurator<T>)} instead.")]
     public sealed class FluentContractBuilder<T>
     {
-        private readonly FluentContractResolver resolver;
-        private readonly FluentSerializationBinder binder;
+        private readonly ContractResolver resolver;
+        private readonly SerializationRebinder binder;
 
-        internal FluentContractBuilder(FluentContractResolver resolver, FluentSerializationBinder binder)
+        internal FluentContractBuilder(ContractResolver resolver, SerializationRebinder binder)
         {
             this.resolver = resolver;
             this.binder = binder;
@@ -26,18 +26,18 @@ namespace Ugpa.Json.Serialization
         /// <returns>This instance of configurator.</returns>
         public FluentContractBuilder<T> ConstructWith(Func<T> factory)
         {
-            resolver.SetFactory(factory);
+            resolver.SetDefaultCreator(typeof(T), () => factory()!);
             return this;
         }
 
         /// <summary>
-        /// Configures parametrised factory.
+        /// Configures parametrized factory.
         /// </summary>
-        /// <param name="factory">Parametrised factory delegate.</param>
+        /// <param name="factory">Parametrized factory delegate.</param>
         /// <returns>This instance of configurator.</returns>
         public FluentContractBuilder<T> ConstructWith(Func<object[], T> factory)
         {
-            resolver.SetFactory(factory);
+            resolver.SetOverrideCreator(typeof(T), _ => factory(_)!);
             return this;
         }
 
@@ -51,13 +51,8 @@ namespace Ugpa.Json.Serialization
         /// <returns>This instance of configurator.</returns>
         public FluentContractBuilder<T> HasProperty<TProp>(Expression<Func<T, TProp>> property, string name, bool isRequired = true)
         {
-            if (property.Body is not MemberExpression memberExpression)
-            {
-                throw new ArgumentException(Resources.FluentContractBuilder_NotMemberExpression);
-            }
-
-            resolver.AddProperty(memberExpression.Member, name, isRequired);
-
+            var member = ReflectionUtils.GetMemberInfo(property);
+            resolver.AddPropertyInfo(typeof(T), member, name, isRequired, null);
             return this;
         }
 
@@ -69,13 +64,8 @@ namespace Ugpa.Json.Serialization
         /// <returns>This instance of configurator.</returns>
         public FluentContractBuilder<T> IgnoreProperty<TProp>(Expression<Func<T, TProp>> property)
         {
-            if (property.Body is not MemberExpression memberExpression)
-            {
-                throw new ArgumentException(Resources.FluentContractBuilder_NotMemberExpression);
-            }
-
-            resolver.SkipProperty(memberExpression.Member);
-
+            var member = ReflectionUtils.GetMemberInfo(property);
+            resolver.SkipProperty(typeof(T), member);
             return this;
         }
 

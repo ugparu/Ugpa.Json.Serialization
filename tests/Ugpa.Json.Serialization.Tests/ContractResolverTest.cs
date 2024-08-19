@@ -7,12 +7,12 @@ using Xunit;
 
 namespace Ugpa.Json.Serialization.Tests
 {
-    public sealed class FluentContractResolverTest
+    public sealed class ContractResolverTest
     {
         [Fact]
         public void DefaultContractIsValid()
         {
-            var resolver = new FluentContractResolver();
+            IContractResolver resolver = Configurator.Create().Complete();
 
             var contract = resolver.ResolveContract(typeof(TestObjectA));
             Assert.IsType<JsonObjectContract>(contract);
@@ -36,59 +36,80 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void ErrorOnDuplicatePropertyConfiguration()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-
-            Assert.Throws<ArgumentException>(
-                () => resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false));
+            Configurator
+                .Create()
+                .Configure<TestObjectA>(t =>
+                    {
+                        t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"));
+                        Assert.Throws<ArgumentException>(() => t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")));
+                    })
+                .Complete();
         }
 
         [Fact]
         public void DuplicatePropertySkipConfigurationSuccess()
         {
-            var resolver = new FluentContractResolver();
-            var property = typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1));
-            resolver.SkipProperty(property);
-            resolver.SkipProperty(property);
+            Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .IgnoreProperty(_ => _.Property1)
+                    .IgnoreProperty(_ => _.Property1));
         }
 
         [Fact]
         public void ErrorOnPropertyMultipleConfigurations()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA1", false);
-
-            Assert.Throws<ArgumentException>(
-                () => resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA2", false));
+            Configurator
+                .Create()
+                .Configure<TestObjectA>(t =>
+                {
+                    t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA1"));
+                    Assert.Throws<ArgumentException>(() => t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA2")));
+                });
         }
 
         [Fact]
-        public void ErrorOnPropertyMultipleConfigurationsForDerivedType()
+        public void ErrorOnMultiplePropertyConfigurationsWithSameName()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+            Configurator
+                .Create()
+                .Configure<TestObjectA>(t =>
+                {
+                    t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"));
+                    Assert.Throws<ArgumentException>(() => t.HasOptionalProperty(_ => _.Property2, p => p.HasName("propA")));
+                });
+        }
 
-            Assert.Throws<ArgumentException>(
-                () => resolver.AddProperty(typeof(TestObjectB).GetProperty(nameof(TestObjectA.Property1)), "propA", false));
+        [Fact]
+        public void ErrorOnConfiguringBasePropertyFromDerivedType()
+        {
+            var configurator = Configurator.Create();
+            Assert.Throws<InvalidOperationException>(
+                () => configurator.Configure<TestObjectB>(t => t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"))));
         }
 
         [Fact]
         public void ErrorOnPropertyNameConflictConfiguration()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-
-            Assert.Throws<ArgumentException>(
-                () => resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property2)), "propA", false));
+            Configurator
+                .Create()
+                .Configure<TestObjectA>(t =>
+                {
+                    t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"));
+                    Assert.Throws<ArgumentException>(() => t.HasOptionalProperty(_ => _.Property2, p => p.HasName("propA")));
+                });
         }
 
         [Fact]
         public void ConfiguredPropertyNameIsValid()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property2)), "propB", false);
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property3)), "propC", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"))
+                    .HasOptionalProperty(_ => _.Property2, p => p.HasName("propB"))
+                    .HasOptionalProperty(_ => _.Property3, p => p.HasName("propC")))
+                .Complete();
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectA));
 
@@ -100,9 +121,12 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void PropertyRequiredAllowNullIsValid()
         {
-            var resolver = new FluentContractResolver { AllowNullValues = true };
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property2)), "propB", true);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"))
+                    .HasRequiredProperty(_ => _.Property2, p => p.HasName("propB")))
+                .Complete();
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectA));
 
@@ -113,9 +137,13 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void PropertyRequiredDisallowNullIsValid()
         {
-            var resolver = new FluentContractResolver { AllowNullValues = false };
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property2)), "propB", true);
+            IContractResolver resolver = Configurator
+                .Create()
+                .DisallowNullValues()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"))
+                    .HasRequiredProperty(_ => _.Property2, p => p.HasName("propB")))
+                .Complete();
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectA));
 
@@ -126,9 +154,11 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void ConfiguredPropertiesInherits()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-            resolver.AddProperty(typeof(TestObjectB).GetProperty(nameof(TestObjectB.Property4)), "propD", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")))
+                .Configure<TestObjectB>(t => t.HasOptionalProperty(_ => _.Property4, p => p.HasName("propD")))
+                .Complete();
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectB));
 
@@ -148,11 +178,13 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void ConfiguredSkipedPropertiesInherits()
+        public void ConfiguredSkippedPropertiesInherits()
         {
-            var resolver = new FluentContractResolver();
-            resolver.SkipProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)));
-            resolver.SkipProperty(typeof(TestObjectB).GetProperty(nameof(TestObjectB.Property4)));
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t.IgnoreProperty(_ => _.Property1))
+                .Configure<TestObjectB>(t => t.IgnoreProperty(_ => _.Property4))
+                .Complete();
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectB));
 
@@ -162,10 +194,13 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void OverridenPropertyConfigurationInherits()
+        public void OverriddenPropertyConfigurationInherits()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA2)));
 
@@ -181,10 +216,13 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void OverridenSkipedPropertyConfigurationInherits()
+        public void OverriddenSkippedPropertyConfigurationInherits()
         {
-            var resolver = new FluentContractResolver();
-            resolver.SkipProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)));
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .IgnoreProperty(_ => _.Property1))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA2)));
 
@@ -194,10 +232,13 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void OverridenPropertyIntermediateConfigurationInherits()
+        public void OverriddenPropertyIntermediateConfigurationInherits()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA2>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA22)));
 
@@ -213,10 +254,13 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void OverridenSkipedPropertyIntermediateConfigurationInherits()
+        public void OverriddenSkippedPropertyIntermediateConfigurationInherits()
         {
-            var resolver = new FluentContractResolver();
-            resolver.SkipProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA.Property1)));
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA2>(t => t
+                    .IgnoreProperty(_ => _.Property1))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA22)));
 
@@ -228,8 +272,11 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void HiddenPropertyConfigurationInherits()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA3)));
             Assert.Equal(4, contract.Properties.Count);
@@ -242,10 +289,13 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void HiddenPropertyOverlapsSkipedProperty()
+        public void HiddenPropertyOverlapsSkippedProperty()
         {
-            var resolver = new FluentContractResolver();
-            resolver.SkipProperty(typeof(TestObjectA3).GetProperty(nameof(TestObjectA3.Property1)));
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA3>(t => t
+                    .IgnoreProperty(_ => _.Property1))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA3)));
             Assert.Equal(3, contract.Properties.Count);
@@ -255,9 +305,13 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void ConfiguredInterfacePropertiesInherits()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)), "propA", false);
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property3)), "propC", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<ITestObject>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")))
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property3, p => p.HasName("propC")))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
 
@@ -270,14 +324,55 @@ namespace Ugpa.Json.Serialization.Tests
             Assert.Equal(typeof(TestObjectA), contract.Properties["propA"].DeclaringType);
             Assert.Equal(typeof(TestObjectA), contract.Properties[nameof(TestObjectA.Property2)].DeclaringType);
             Assert.Equal(typeof(TestObjectA), contract.Properties["propC"].DeclaringType);
+
+            var json = JsonConvert.SerializeObject(new TestObjectA(), new JsonSerializerSettings { ContractResolver = resolver });
         }
 
         [Fact]
-        public void ConfiguredInterfaceSkipedPropertiesInherits()
+        public void ExplicitInterfaceConfiguration()
         {
-            var resolver = new FluentContractResolver();
-            resolver.SkipProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)));
-            resolver.SkipProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property3)));
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<ITestInterface3>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"))
+                    .HasOptionalProperty(_ => _.Property2, p => p.HasName("propB")))
+                .Configure<TestObjectWithExplicitInterfaceImpl>(t => t
+                    .HasOptionalProperty(_ => _.Property0, p => p.HasName("prop0")))
+                .Complete();
+
+            var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectWithExplicitInterfaceImpl)));
+
+            Assert.Equal(3, contract.Properties.Count);
+
+            Assert.Equal(nameof(TestObjectWithExplicitInterfaceImpl.Property0), contract.Properties["prop0"].UnderlyingName);
+            Assert.Equal(nameof(ITestInterface3.Property1), contract.Properties["propA"].UnderlyingName);
+            Assert.Equal(nameof(ITestInterface3.Property2), contract.Properties["propB"].UnderlyingName);
+
+            Assert.Equal(typeof(TestObjectWithExplicitInterfaceImpl), contract.Properties["prop0"].DeclaringType);
+            Assert.Equal(typeof(ITestInterface3), contract.Properties["propA"].DeclaringType);
+            Assert.Equal(typeof(ITestInterface3), contract.Properties["propB"].DeclaringType);
+
+            Assert.False(contract.Properties["propA"].Writable);
+            Assert.True(contract.Properties["propB"].Writable);
+
+            var obj = JsonConvert.DeserializeObject<TestObjectWithExplicitInterfaceImpl>(
+                "{'prop0':321,'propA':567,'propB':951}",
+                new JsonSerializerSettings { ContractResolver = resolver });
+
+            Assert.Equal(321, obj.Property0);
+            Assert.Equal(951, ((ITestInterface3)obj).Property2);
+        }
+
+        [Fact]
+        public void ConfiguredInterfaceSkippedPropertiesInherits()
+        {
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<ITestObject>(t => t
+                    .IgnoreProperty(_ => _.Property1))
+                .Configure<TestObjectA>(t => t
+                    .IgnoreProperty(_ => _.Property3))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
 
@@ -290,9 +385,13 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void MultipleInterfacesPropertiesResolverCorrectly()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)), "prop1", false);
-            resolver.AddProperty(typeof(ITestObject2).GetProperty(nameof(ITestObject2.Property4)), "prop4", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<ITestObject>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("prop1")))
+                .Configure<ITestObject2>(t => t
+                    .HasOptionalProperty(_ => _.Property4, p => p.HasName("prop4")))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectB)));
 
@@ -302,11 +401,15 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void OverridenPropertyConfigurationOverlap()
+        public void OverriddenPropertyConfigurationOverlap()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-            resolver.AddProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA2.Property1)), "propA2", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")))
+                .Configure<TestObjectA2>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA2")))
+                .Complete();
 
             var contractA = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
             Assert.Equal(3, contractA.Properties.Count);
@@ -320,11 +423,15 @@ namespace Ugpa.Json.Serialization.Tests
         }
 
         [Fact]
-        public void OverridenSkipedPropertyConfigurationOverlap()
+        public void OverriddenSkippedPropertyConfigurationOverlap()
         {
-            var resolver = new FluentContractResolver();
-            resolver.SkipProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)));
-            resolver.SkipProperty(typeof(TestObjectA2).GetProperty(nameof(TestObjectA2.Property1)));
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .IgnoreProperty(_ => _.Property1))
+                .Configure<TestObjectA2>(t => t
+                    .IgnoreProperty(_ => _.Property1))
+                .Complete();
 
             var contractA = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
             Assert.Equal(2, contractA.Properties.Count);
@@ -338,9 +445,13 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void HiddenPropertyConfigurationOverlap()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-            resolver.AddProperty(typeof(TestObjectA3).GetProperty(nameof(TestObjectA3.Property1)), "propA2", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")))
+                .Configure<TestObjectA3>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA2")))
+                .Complete();
 
             var contractA = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
             Assert.Equal(3, contractA.Properties.Count);
@@ -358,9 +469,13 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void InterfacePropertyConfigurationOverlap()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(ITestObject).GetProperty(nameof(ITestObject.Property1)), "propA1", false);
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA2", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<ITestObject>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA1")))
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA2")))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
             Assert.Equal(3, contract.Properties.Count);
@@ -371,10 +486,12 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void SkippedPropertyPriorityOverConfiguration()
         {
-            var resolver = new FluentContractResolver();
-            var property = typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1));
-            resolver.AddProperty(property, "propA1", false);
-            resolver.SkipProperty(property);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA1"))
+                    .IgnoreProperty(_ => _.Property1))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectA)));
 
@@ -385,31 +502,42 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void TypesWithSameNamePropertiesConfiguresSuccessfully()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-            resolver.AddProperty(typeof(TestObjectC).GetProperty(nameof(TestObjectC.Property1)), "propA", false);
+            var resolver = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")))
+                .Configure<TestObjectC>(t => t
+                    .HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")));
         }
 
         [Fact]
         public void ErrorOnDerivedClassPropertyNameConflict()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false);
-            Assert.Throws<ArgumentException>(
-                () => resolver.AddProperty(typeof(TestObjectB).GetProperty(nameof(TestObjectB.Property4)), "propA", false));
+            var configurator1 = Configurator
+                .Create()
+                .Configure<TestObjectA>(t => t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA")));
 
-            resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectB).GetProperty(nameof(TestObjectB.Property4)), "propA", false);
+            var configurator2 = Configurator
+                .Create()
+                .Configure<TestObjectB>(t => t.HasOptionalProperty(_ => _.Property4, p => p.HasName("propA")));
+
             Assert.Throws<ArgumentException>(
-                () => resolver.AddProperty(typeof(TestObjectA).GetProperty(nameof(TestObjectA.Property1)), "propA", false));
+                () => configurator1.Configure<TestObjectB>(t => t.HasOptionalProperty(_ => _.Property4, p => p.HasName("propA"))));
+
+            Assert.Throws<ArgumentException>(
+                () => configurator2.Configure<TestObjectA>(t => t.HasOptionalProperty(_ => _.Property1, p => p.HasName("propA"))));
         }
 
         [Fact]
         public void InternalPropertiesConfiguredSuccessfully()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX), BindingFlags.Instance | BindingFlags.NonPublic), "x", false);
-            resolver.AddProperty(typeof(TestObjectY).GetProperty(nameof(TestObjectY.PropertyY), BindingFlags.Instance | BindingFlags.NonPublic), "y", true);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectX>(t => t
+                    .HasOptionalProperty(_ => _.PropertyX, p => p.HasName("x")))
+                .Configure<TestObjectY>(t => t
+                    .HasOptionalProperty(_ => _.PropertyY, p => p.HasName("y")))
+                .Complete();
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectX));
             Assert.Single(contract.Properties);
@@ -429,9 +557,12 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void MultipleBaseInternalPropertiesConfiguredCorrectly()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX), BindingFlags.Instance | BindingFlags.NonPublic), "propX", false);
-            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX2), BindingFlags.Instance | BindingFlags.NonPublic), "propX2", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectX>(t => t
+                    .HasOptionalProperty(_ => _.PropertyX, p => p.HasName("propX"))
+                    .HasOptionalProperty(_ => _.PropertyX2, p => p.HasName("propX2")))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectY)));
 
@@ -443,8 +574,11 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void InternalPropertyWithPrivateSetIsWritableForDerivedClass()
         {
-            var resolver = new FluentContractResolver();
-            resolver.AddProperty(typeof(TestObjectX).GetProperty(nameof(TestObjectX.PropertyX2), BindingFlags.Instance | BindingFlags.NonPublic), "propX2", false);
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectX>(t => t
+                    .HasOptionalProperty(_ => _.PropertyX2, p => p.HasName("propX2")))
+                .Complete();
 
             var contract = Assert.IsType<JsonObjectContract>(resolver.ResolveContract(typeof(TestObjectY)));
 
@@ -459,9 +593,13 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void CustomDefaultConstructorSet()
         {
-            var resolver = new FluentContractResolver();
-            var factory = (Func<TestObjectZ>)(() => new TestObjectZ(1));
-            resolver.SetFactory(factory);
+            Func<TestObjectZ> factory = () => new TestObjectZ(1);
+
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectZ>(t => t
+                    .ConstructWith(factory))
+                .Complete();
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectZ));
 
@@ -475,9 +613,13 @@ namespace Ugpa.Json.Serialization.Tests
         [Fact]
         public void CustomOverrideConstructorSet()
         {
-            var resolver = new FluentContractResolver();
-            var factory = (Func<object[], TestObjectZ>)(_ => new TestObjectZ((int)_[0]));
-            resolver.SetFactory(factory);
+            Func<object[], TestObjectZ> factory = _ => new TestObjectZ((int)_[0]);
+
+            IContractResolver resolver = Configurator
+                .Create()
+                .Configure<TestObjectZ>(t => t
+                    .ConstructWith(factory))
+                .Complete();
 
             var contract = (JsonObjectContract)resolver.ResolveContract(typeof(TestObjectZ));
 
@@ -488,7 +630,7 @@ namespace Ugpa.Json.Serialization.Tests
             Assert.Same(factory, extractedFactory);
         }
 
-        #region Тестовые объекты
+        #region Test objects
 
         private interface ITestObject
         {
@@ -506,7 +648,23 @@ namespace Ugpa.Json.Serialization.Tests
 
             public int? Property2 { get; private set; }
 
-            public string Property3 { get; }
+            public string Property3 => "FooBar";
+        }
+
+        private interface ITestInterface3
+        {
+            int Property1 { get; }
+
+            int Property2 { get; set; }
+        }
+
+        private sealed class TestObjectWithExplicitInterfaceImpl : ITestInterface3
+        {
+            public int Property0 { get; set; }
+
+            int ITestInterface3.Property1 => throw new NotImplementedException();
+
+            int ITestInterface3.Property2 { get; set; }
         }
 
         private class TestObjectA2 : TestObjectA
