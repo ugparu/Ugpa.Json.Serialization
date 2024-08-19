@@ -28,7 +28,7 @@ To configure type there's `TypeConfigurator<T>` class. You can't instantiate thi
 There're next methods you can use to configure type:
 
 |Method|Description|
-|:-:||
+|:-:|-|
 |`HasRequiredProperty<TProp>`|Configure property as required property by calling configure delegate.|
 |`HasOptionalProperty<TProp>`|Configure property as optional property by calling configure delegate.|
 |`IgnoreProperty<TProp>`|Add property to ignore list, so it will be ignored through serialization process.|
