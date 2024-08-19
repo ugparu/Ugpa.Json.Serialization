@@ -35,6 +35,9 @@ There're next methods you can use to configure type:
 |`HasContractName`|Set contract name for type `T` which will be associated with it in JSON in `$type` field. |
 |`ConstructWith`|Set default or override (depending on method overload) constructor delegate for type when serialize.|
 
+> [!NOTE]
+> When configuring type name binding, don't forget to set `JsonSerializerSettings.TypeNameHandling` property.
+
 ### Configuring property
 
 To configure property there's `PropertyConfigurator<T, TProp>` class. As in case of `TypeConfigurator<T>`, you also can't instantiate this class manually, but you can work with it when calling `TypeConfigurator<T>.HasRequiredProperty<T>` or `TypeConfigurator<T>.HasOptionalProperty<T>` method, so instance of `PropertyConfigurator<T, TProp>` is passed as configure delegate parameter.
@@ -51,7 +54,7 @@ There're next methods you can use to configure property:
 
 ### Completing configuration
 
-To complete configuring and get a working configuration you need to call `Configurator.Complete` method. This call creates an instance of `Configuration` class, which can be used as `ISerializationBinder` and/or `IContractResolver`.
+To complete configuring and get a working configuration you need to call `Configurator.Complete` method. This call creates an instance of `Configuration` class, which can be used as `ISerializationBinder` and/or `IContractResolver`. All you need now is to create a new instance of `JsonSerializerSettings` and assign created configuration to its `SerializationBinder` and `ContractResolver` properties.
 
 ## Examples
 
