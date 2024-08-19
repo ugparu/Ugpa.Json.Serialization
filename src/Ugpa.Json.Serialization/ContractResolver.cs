@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using MemberData = (string Name, bool IsRequired, System.Func<object, bool>? SerializeCondition);
+using MemberData = (string Name, bool IsRequired, System.Predicate<object>? SerializeCondition);
 
 namespace Ugpa.Json.Serialization;
 
@@ -23,7 +23,7 @@ internal sealed class ContractResolver : DefaultContractResolver
     public void SetOverrideCreator(Type type, ObjectConstructor<object> factory)
         => overrideCreators[type] = factory;
 
-    public void AddPropertyInfo(Type type, MemberInfo member, string name, bool isRequired, Func<object, bool>? serializeCondition)
+    public void AddPropertyInfo(Type type, MemberInfo member, string name, bool isRequired, Predicate<object>? serializeCondition)
     {
         if (!properties.TryGetValue(type, out var data))
         {
@@ -118,12 +118,18 @@ internal sealed class ContractResolver : DefaultContractResolver
         if (match?.Value is { } data)
         {
             property.PropertyName = data.Name;
+
             property.Required = data.IsRequired switch
             {
                 true => Required.Always,
                 false when AllowNullValues => Required.Default,
                 false => Required.DisallowNull
             };
+
+            if (data.SerializeCondition is not null)
+            {
+                property.ShouldSerialize = data.SerializeCondition;
+            }
         }
 
         if (member is PropertyInfo propInfo)

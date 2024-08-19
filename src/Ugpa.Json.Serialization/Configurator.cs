@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Newtonsoft.Json.Serialization;
 using Ugpa.Json.Serialization.Properties;
-using MemberData = (string Name, bool IsRequired, System.Func<object, bool>? SerializeCondition);
+using MemberData = (string Name, bool IsRequired, System.Predicate<object>? SerializeCondition);
 
 namespace Ugpa.Json.Serialization;
 
@@ -149,7 +149,7 @@ public sealed class Configurator : ITypeConfigurator
         var data = (
             Name: name ?? member.Name,
             isRequired,
-            SerializeCondition: serializeCondition is null ? null : (Func<object, bool>)(o => serializeCondition((T)o)));
+            SerializeCondition: serializeCondition is null ? null : (Predicate<object>)(o => serializeCondition((T)o)));
 
         var inheritanceProperties = properties
             .Where(_ =>
