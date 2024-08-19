@@ -9,6 +9,5 @@ This repository contains a simple implementation of fluent configurator for [New
 
 ## Documentation
 
-How to configure see [here](doc/Configuring.md).
-
-Information about updates see [here](doc/ReleaseNotes.md).
+- [Configuring](doc/Configuring.md)
+- [Release notes](doc/ReleaseNotes.md)
