@@ -3,10 +3,6 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove(Directory.Build.props, $(MSBuildThisFileDirectory)..))" />
 
   <PropertyGroup>
-    <Version>1.2.0</Version>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <BaseOutputPath>$(SolutionDir)bin/</BaseOutputPath>
