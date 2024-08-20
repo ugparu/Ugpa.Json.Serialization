@@ -15,8 +15,6 @@ jobs:
       with:
         ref: master
     - uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 5.0.x
     - uses: nuget/setup-nuget@v1
       with:
         nuget-api-key: ${{ secrets.NUGET_ORG_API_KEY }}
