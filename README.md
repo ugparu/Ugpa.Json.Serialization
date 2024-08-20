@@ -26,6 +26,7 @@ This kind of configuration provides you next benfits:
 - [x] Variaty. You can use different configuration for the same types, e.g., for re-coding JSON formats using single DTO model.
 - [x] Localized configuration. The entire configuration can be described in one place.
 - [x] Extensibility. If you are using any IoC container and serialized classes are distributed by separate assemblies, you can split configuration on parts and place them next on serialized classes, and then use IoC to collect those parts in solid configuration.
+- [x] Flexibility for generic types. If you are working with generic type, there's no need to create empty derived types for different generic subclasses, because you can create configuration for generics.
 
 > [!IMPORTANT]
 > Configurator is based on `IContractResolver` and `ISerializationBinder` interfaces implementation, so it's incompatible with any other resolvers and binders.
