@@ -1,6 +1,6 @@
 {
   "settings": {
-    "orderingRules": { "usingDirectivesPlacement": "outsideNamespace" },
+    "orderingRules": { "usingDirectivesPlacement": "preserve" },
     "documentationRules": { "documentInternalElements": false }
   }
 }

@@ -7,12 +7,12 @@ namespace Ugpa.Json.Serialization
     /// <summary>
     /// Represents a fluent style configurator.
     /// </summary>
+    [Obsolete($"This class is obsolete. Use {nameof(Configurator)} instead.")]
     public sealed class FluentContext : IContractResolver, ISerializationBinder
     {
+        private readonly ContractResolver resolver = new();
+        private readonly SerializationRebinder binder = new(new DefaultSerializationBinder());
         private readonly HashSet<Type> configuredTypes = new();
-
-        private readonly FluentContractResolver resolver = new();
-        private readonly FluentSerializationBinder binder = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentContext"/> class.

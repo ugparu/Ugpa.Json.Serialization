@@ -117,13 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="FluentContractBuilder_NotMemberExpression" xml:space="preserve">
-    <value>Выражение не является выражением доступа к члену класса.</value>
-  </data>
   <data name="FluentContractResolver_InheritancePropertyNameConflict" xml:space="preserve">
-    <value>В иерархии наследования типа {0} свойство с именем {1} уже сконфигурировано у типа {2} для {3}.</value>
+    <value>Inheritance hierarchy of type "{0}" already has configuration for json field "{1}" for type "{2}" on property "{3}".</value>
   </data>
   <data name="FluentContractResolver_PropertyNameConflict" xml:space="preserve">
-    <value>Для типа {0} свойство с именем {1} уже сконфигурировано для {2}.</value>
+    <value>For type "{0}" json field "{1}" already configured on property "{2}".</value>
+  </data>
+  <data name="ReflectionUtils_NotMemberExpression" xml:space="preserve">
+    <value>Expression mut be MemberExpression.</value>
+  </data>
+  <data name="ReflectionUtils_ParameterNotMemberOwner" xml:space="preserve">
+    <value>Parent expression of MemberExpression must be passed ParameterExpression.</value>
+  </data>
+  <data name="ReflectionUtils_ReflectedTypeNotMemberOwner" xml:space="preserve">
+    <value>Member "{0}" can ot be configured for type "{1}" because it's declaring type is "{2}".</value>
+  </data>
+  <data name="ReflectionUtils_UnableToResolveMember" xml:space="preserve">
+    <value>Unable to resolve member "{0}" for type "{1}".</value>
   </data>
 </root>
