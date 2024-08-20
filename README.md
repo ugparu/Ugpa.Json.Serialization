@@ -2,8 +2,9 @@
 
 This repository contains a simple implementation of fluent configurator for [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) serializer.
 
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/ugparu/Ugpa.Json.Serialization/build%20and%20test/develop?label=develop)
-[![Nuget](https://img.shields.io/nuget/v/Ugpa.Json.Serialization)](https://www.nuget.org/packages/Ugpa.Json.Serialization)
+[![Nuget](https://img.shields.io/nuget/v/Ugpa.Json.Serialization?label=Ugpa.Json.Serialization&style=flat-square)](https://www.nuget.org/packages/Ugpa.Json.Serialization)
+![build](https://img.shields.io/github/actions/workflow/status/ugparu/Ugpa.Json.Serialization/build.yml?branch=develop&label=Build%20and%20test&style=flat-square)
+![publish](https://img.shields.io/github/actions/workflow/status/ugparu/Ugpa.Json.Serialization/publish.yml?event=release&label=Publish&style=flat-square)
 
 With this library you can easily configure serializer like this:
 
