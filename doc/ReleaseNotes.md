@@ -1,4 +1,4 @@
-# 2.\*.0
+# 2.1.0
 * Added `ConstructWith` method overload, accepting `Expression<T>` as parameter.
 
 # 2.0.0

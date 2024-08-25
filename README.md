@@ -21,9 +21,9 @@ var config = Configurator
     .Complete();
 ```
 
-This kind of configuration provides you next benfits:
-- [x] No attributes. Configuring without attributes allows you to create configurations even for casses you are not owning.
-- [x] Variaty. You can use different configuration for the same types, e.g., for re-coding JSON formats using single DTO model.
+This kind of configuration provides you next benefits:
+- [x] No attributes. Configuring without attributes allows you to create configurations even for classes you are not owning.
+- [x] Variety. You can use different configuration for the same types, e.g., for re-coding JSON formats using single DTO model.
 - [x] Localized configuration. The entire configuration can be described in one place.
 - [x] Extensibility. If you are using any IoC container and serialized classes are distributed by separate assemblies, you can split configuration on parts and place them next on serialized classes, and then use IoC to collect those parts in solid configuration.
 - [x] Flexibility for generic types. If you are working with generic type, there's no need to create empty derived types for different generic subclasses, because you can create configuration for generics.
