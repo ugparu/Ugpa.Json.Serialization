@@ -117,10 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="FluentContractResolver_InheritancePropertyNameConflict" xml:space="preserve">
+  <data name="Configurator_InheritancePropertyNameConflict" xml:space="preserve">
     <value>Inheritance hierarchy of type "{0}" already has configuration for json field "{1}" for type "{2}" on property "{3}".</value>
   </data>
-  <data name="FluentContractResolver_PropertyNameConflict" xml:space="preserve">
+  <data name="Configurator_InvalidExpressionBodyType" xml:space="preserve">
+    <value>Expression body must be of type "{0}".</value>
+  </data>
+  <data name="Configurator_PropertyNameConflict" xml:space="preserve">
     <value>For type "{0}" json field "{1}" already configured on property "{2}".</value>
   </data>
   <data name="ReflectionUtils_NotMemberExpression" xml:space="preserve">

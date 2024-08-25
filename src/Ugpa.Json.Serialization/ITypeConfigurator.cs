@@ -11,6 +11,9 @@ internal interface ITypeConfigurator
 
     void SetOverrideCreator<T>(Func<object[], T> factory);
 
+    void SetOverrideCreator<T, TFunc>(Expression<TFunc> factory)
+        where TFunc : Delegate;
+
     void IgnoreProperty<T, TProp>(Expression<Func<T, TProp>> property);
 
     void AddProperty<T, TProp>(Expression<Func<T, TProp>> property, string? name, bool isRequired, Func<T, bool>? serializeCondition);
