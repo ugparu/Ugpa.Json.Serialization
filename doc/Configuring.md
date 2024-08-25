@@ -33,7 +33,7 @@ There're next methods you can use to configure type:
 |`HasOptionalProperty<TProp>`|Configure property as optional property by calling configure delegate.|
 |`IgnoreProperty<TProp>`|Add property to ignore list, so it will be ignored through serialization process.|
 |`HasContractName`|Set contract name for type `T` which will be associated with it in JSON in `$type` field. |
-|`ConstructWith`|Set default or override (depending on method overload) constructor delegate for type when serialize.|
+|`ConstructWith`|Set default or override (depending on method overload) constructor delegate for type when deserialize.|
 
 > [!NOTE]
 > When configuring type name binding, don't forget to set `JsonSerializerSettings.TypeNameHandling` property.
@@ -107,12 +107,17 @@ public sealed class Employee
 
 ...
 
-// parameters are getten from JSON properties `name` and `age`.
+// parameters are gotten from JSON properties `name` and `age`.
 config
     .Configure<Employee>(cfg => cfg
         .ConstructWith(_ => new Employee(
             (string)_[0], // name.
             (int)_[1]))); // age.
+
+// parameters are gotten from JSON properties `foo` and `bar` according to the parameter names.
+config
+    .Configure<Employee>(cfg => cfg
+        .ConstructWith<Func<int, int, Employee>>((foo, bar) => new Employee(foo, bar));
 ```
 
 #### Configuring derived classes
