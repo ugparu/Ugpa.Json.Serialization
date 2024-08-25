@@ -13,15 +13,15 @@ internal sealed class ContractResolver : DefaultContractResolver
     private readonly Dictionary<Type, Dictionary<MemberInfo, MemberData>> properties = new();
     private readonly Dictionary<Type, HashSet<MemberInfo>> ignored = new();
     private readonly Dictionary<Type, Func<object>> defaultCreators = new();
-    private readonly Dictionary<Type, ObjectConstructor<object>> overrideCreators = new();
+    private readonly Dictionary<Type, (ObjectConstructor<object> Creator, JsonProperty[]? Params)> overrideCreators = new();
 
     public bool AllowNullValues { get; set; } = true;
 
     public void SetDefaultCreator(Type type, Func<object> factory)
         => defaultCreators[type] = factory;
 
-    public void SetOverrideCreator(Type type, ObjectConstructor<object> factory)
-        => overrideCreators[type] = factory;
+    public void SetOverrideCreator(Type type, ObjectConstructor<object> factory, JsonProperty[]? parameters)
+        => overrideCreators[type] = (factory, parameters);
 
     public void AddPropertyInfo(Type type, MemberInfo member, string name, bool isRequired, Predicate<object>? serializeCondition)
     {
@@ -56,7 +56,15 @@ internal sealed class ContractResolver : DefaultContractResolver
 
         if (contract is JsonObjectContract objContract && overrideCreators.TryGetValue(objectType, out var overrideCreator))
         {
-            objContract.OverrideCreator = overrideCreator;
+            objContract.OverrideCreator = overrideCreator.Creator;
+            if (overrideCreator.Params is { } @params)
+            {
+                objContract.CreatorParameters.Clear();
+                foreach (var param in @params)
+                {
+                    objContract.CreatorParameters.Add(param);
+                }
+            }
         }
 
         return contract;
