@@ -81,6 +81,19 @@ public sealed class TypeConfigurator<T>
         return this;
     }
 
+    /// <summary>
+    /// Configures a type <typeparamref name="T"/> factory when deserializing.
+    /// </summary>
+    /// <typeparam name="TFunc">Type of factory delegate.</typeparam>
+    /// <param name="factory">A func, creating instance of <typeparamref name="T"/>.</param>
+    /// <returns>Instance of <see cref="TypeConfigurator{T}"/>.</returns>
+    public TypeConfigurator<T> ConstructWith<TFunc>(Expression<TFunc> factory)
+        where TFunc : Delegate
+    {
+        configurator.SetOverrideCreator<T, TFunc>(factory);
+        return this;
+    }
+
     private TypeConfigurator<T> HasProperty<TProp>(Expression<Func<T, TProp>> property, Action<PropertyConfigurator<T, TProp>> configure, bool isRequired)
     {
         var config = new PropertyConfigurator();

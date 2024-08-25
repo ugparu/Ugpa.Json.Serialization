@@ -20,7 +20,7 @@ public sealed class Configurator : ITypeConfigurator
     private readonly Dictionary<Type, Dictionary<MemberInfo, MemberData>> properties = new();
     private readonly Dictionary<Type, HashSet<MemberInfo>> ignored = new();
     private readonly Dictionary<Type, Func<object>> defaultCreators = new();
-    private readonly Dictionary<Type, ObjectConstructor<object>> overrideCreators = new();
+    private readonly Dictionary<Type, (ObjectConstructor<object> Creator, JsonProperty[]? Params)> overrideCreators = new();
 
     private ISerializationBinder? baseBinder;
     private bool allowNullValues = true;
@@ -100,7 +100,7 @@ public sealed class Configurator : ITypeConfigurator
 
         foreach (var overrideCreator in overrideCreators)
         {
-            resolver.SetOverrideCreator(overrideCreator.Key, overrideCreator.Value);
+            resolver.SetOverrideCreator(overrideCreator.Key, overrideCreator.Value.Creator, overrideCreator.Value.Params);
         }
 
         foreach (var ignoredProperty in ignored)
@@ -129,7 +129,53 @@ public sealed class Configurator : ITypeConfigurator
         => defaultCreators[typeof(T)] = () => factory()!;
 
     void ITypeConfigurator.SetOverrideCreator<T>(Func<object[], T> factory)
-        => overrideCreators[typeof(T)] = _ => factory(_)!;
+        => overrideCreators[typeof(T)] = (_ => factory(_)!, null);
+
+    void ITypeConfigurator.SetOverrideCreator<T, TFunc>(Expression<TFunc> factory)
+    {
+        if (!typeof(T).IsAssignableFrom(factory.Body.Type))
+        {
+            throw new ArgumentNullException(string.Format(
+                Resources.Configurator_InvalidExpressionBodyType,
+                typeof(T).FullName));
+        }
+
+        var argsParameter = Expression.Parameter(typeof(object[]));
+
+        var convert = factory.Parameters
+            .Select<ParameterExpression, Expression>((p, i) =>
+            {
+                var param = Expression.ArrayIndex(argsParameter, Expression.Constant(i));
+                return p.Type.IsValueType
+                    ? Expression.Condition(
+                        Expression.Equal(param, Expression.Constant(null)),
+                        Expression.Throw(Expression.Constant(new ArgumentNullException(p.Name)), p.Type),
+                        Expression.Convert(param, p.Type))
+                    : Expression.Convert(param, p.Type);
+            })
+            .ToArray();
+
+        var wrapCall = Expression.Invoke(factory, convert);
+        var convertToObject = Expression.Convert(wrapCall, typeof(object));
+        var result = Expression.Lambda<ObjectConstructor<object>>(convertToObject, argsParameter);
+        var resultCall = result.Compile();
+
+        JsonProperty ParameterToJsonProperty(ParameterExpression parameter)
+        {
+            return new JsonProperty
+            {
+                DeclaringType = typeof(T),
+                PropertyType = parameter.Type,
+                PropertyName = parameter.Name,
+                Readable = false,
+                Writable = true,
+            };
+        }
+
+        var parameters = factory.Parameters.Select(ParameterToJsonProperty).ToArray();
+
+        overrideCreators[typeof(T)] = (resultCall, parameters);
+    }
 
     void ITypeConfigurator.IgnoreProperty<T, TProp>(Expression<Func<T, TProp>> property)
     {
@@ -162,7 +208,7 @@ public sealed class Configurator : ITypeConfigurator
         if (inheritanceProperties.Any())
         {
             throw new ArgumentException(string.Format(
-                Resources.FluentContractResolver_InheritancePropertyNameConflict,
+                Resources.Configurator_InheritancePropertyNameConflict,
                 member.DeclaringType,
                 data.Name,
                 inheritanceProperties[0].Key.DeclaringType,
@@ -179,7 +225,7 @@ public sealed class Configurator : ITypeConfigurator
         if (propertyInfo.Any())
         {
             throw new ArgumentException(string.Format(
-                Resources.FluentContractResolver_PropertyNameConflict,
+                Resources.Configurator_PropertyNameConflict,
                 member.DeclaringType,
                 data.Name,
                 propertyInfo[0].Key.Name));

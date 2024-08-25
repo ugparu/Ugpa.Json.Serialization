@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -100,6 +101,55 @@ public sealed class SerializationTest
         Assert.Equal(12, dog.Age);
         Assert.Equal(34, dog.Tail);
     }
+
+    [Fact]
+    public void DeserializeWithConstructorExpressionOverrideCreatorTest()
+    {
+        var json = "{'age':123,'b':2,'f':6}";
+
+        var x = 444;
+
+        var config = Configurator
+            .Create()
+            .Configure<Animal>(t => t
+                .IgnoreProperty(_ => _.Age))
+            .Configure<Dog>(t => t
+                .ConstructWith<Func<int, int, int, Dog>>((b, age, f) => new Dog(b, x))
+                .IgnoreProperty(_ => _.Tail))
+            .Complete();
+
+        var settings = new JsonSerializerSettings { ContractResolver = config };
+
+        var dog = JsonConvert.DeserializeObject<Dog>(json, settings);
+
+        Assert.Equal(2, dog.Age);
+        Assert.Equal(444, dog.Tail);
+    }
+
+    [Fact]
+    public void DeserializeWithMethodCallExpressionOverrideCreatorTest()
+    {
+        var json = "{'a':1,'b':2,'c':3}";
+
+        var config = Configurator
+            .Create()
+            .Configure<Animal>(t => t
+                .IgnoreProperty(_ => _.Age))
+            .Configure<Dog>(t => t
+                .ConstructWith<Func<int, int, int, Dog>>((a, b, c) => CreateDog(b, c))
+                .IgnoreProperty(_ => _.Tail))
+            .Complete();
+
+        var settings = new JsonSerializerSettings { ContractResolver = config };
+
+        var dog = JsonConvert.DeserializeObject<Dog>(json, settings);
+
+        Assert.Equal(2, dog.Age);
+        Assert.Equal(3, dog.Tail);
+    }
+
+    static Dog CreateDog(int age, int tail)
+        => new Dog(age, tail);
 
     [Fact]
     public void SerializeWithConditionTest()

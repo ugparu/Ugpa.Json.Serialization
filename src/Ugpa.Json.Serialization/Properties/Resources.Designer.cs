@@ -63,18 +63,27 @@ namespace Ugpa.Json.Serialization.Properties {
         /// <summary>
         ///   Looks up a localized string similar to Inheritance hierarchy of type &quot;{0}&quot; already has configuration for json field &quot;{1}&quot; for type &quot;{2}&quot; on property &quot;{3}&quot;..
         /// </summary>
-        internal static string FluentContractResolver_InheritancePropertyNameConflict {
+        internal static string Configurator_InheritancePropertyNameConflict {
             get {
-                return ResourceManager.GetString("FluentContractResolver_InheritancePropertyNameConflict", resourceCulture);
+                return ResourceManager.GetString("Configurator_InheritancePropertyNameConflict", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Expression body must be of type &quot;{0}&quot;..
+        /// </summary>
+        internal static string Configurator_InvalidExpressionBodyType {
+            get {
+                return ResourceManager.GetString("Configurator_InvalidExpressionBodyType", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to For type &quot;{0}&quot; json field &quot;{1}&quot; already configured on property &quot;{2}&quot;..
         /// </summary>
-        internal static string FluentContractResolver_PropertyNameConflict {
+        internal static string Configurator_PropertyNameConflict {
             get {
-                return ResourceManager.GetString("FluentContractResolver_PropertyNameConflict", resourceCulture);
+                return ResourceManager.GetString("Configurator_PropertyNameConflict", resourceCulture);
             }
         }
         

@@ -37,7 +37,7 @@ namespace Ugpa.Json.Serialization
         /// <returns>This instance of configurator.</returns>
         public FluentContractBuilder<T> ConstructWith(Func<object[], T> factory)
         {
-            resolver.SetOverrideCreator(typeof(T), _ => factory(_)!);
+            resolver.SetOverrideCreator(typeof(T), _ => factory(_)!, null);
             return this;
         }
 
