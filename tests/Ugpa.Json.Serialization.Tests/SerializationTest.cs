@@ -148,8 +148,24 @@ public sealed class SerializationTest
         Assert.Equal(3, dog.Tail);
     }
 
-    static Dog CreateDog(int age, int tail)
-        => new Dog(age, tail);
+    [Fact]
+    public void DeserializeWithNullableArgsOverrideCreatorTest()
+    {
+        var json = "{a:123}";
+
+        var config = Configurator
+            .Create()
+            .Configure<Tuple<int, int>>(t => t
+                .ConstructWith<Func<int?, int?, Tuple<int, int>>>((a, b) => Tuple.Create(a ?? 10, b ?? 20)))
+            .Complete();
+
+        var settings = new JsonSerializerSettings { ContractResolver = config };
+
+        var t = JsonConvert.DeserializeObject<Tuple<int, int>>(json, settings);
+
+        Assert.Equal(123, t.Item1);
+        Assert.Equal(20, t.Item2);
+    }
 
     [Fact]
     public void SerializeWithConditionTest()
@@ -178,6 +194,9 @@ public sealed class SerializationTest
         Assert.Equal(5, json[1].Value<int>("Age"));
         Assert.Empty(json[2]);
     }
+
+    static Dog CreateDog(int age, int tail)
+        => new Dog(age, tail);
 
     private abstract class Animal
     {
