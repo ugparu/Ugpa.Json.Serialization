@@ -146,7 +146,7 @@ public sealed class Configurator : ITypeConfigurator
             .Select<ParameterExpression, Expression>((p, i) =>
             {
                 var param = Expression.ArrayIndex(argsParameter, Expression.Constant(i));
-                return p.Type.IsValueType
+                return p.Type.IsValueType && Nullable.GetUnderlyingType(p.Type) is null
                     ? Expression.Condition(
                         Expression.Equal(param, Expression.Constant(null)),
                         Expression.Throw(Expression.Constant(new ArgumentNullException(p.Name)), p.Type),
