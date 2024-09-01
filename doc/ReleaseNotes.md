@@ -1,4 +1,4 @@
-# 2.1.\*
+# 2.1.1
 * Fixed deserializing of `Nullable` arguments in override creator expression when argument is `null`.
 
 # 2.1.0
